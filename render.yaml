@@ -1,0 +1,41 @@
+# Render Blueprint Configuration
+# This file enables one-click deployment to Render
+
+services:
+  - type: web
+    name: secureguard-connect
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm run install-all && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 10000
+      
+      - key: JWT_SECRET
+        generateValue: true
+        
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      
+      - key: CLIENT_URL
+        sync: false
+        
+      - key: DATABASE_URL
+        value: /opt/render/project/src/server/database/secureguard.db
+        
+      - key: UPLOADS_DIR
+        value: /opt/render/project/src/uploads
+
+    # Persistent disk for database and uploads
+    disk:
+      name: data
+      mountPath: /opt/render/project/src
+      sizeGB: 1
