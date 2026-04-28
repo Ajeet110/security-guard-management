@@ -72,6 +72,35 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'SecureGuard Connect API is running' });
 });
 
+// Debug endpoint to check database status
+app.get('/api/debug', (req, res) => {
+  try {
+    if (!db) {
+      return res.json({ 
+        status: 'error', 
+        message: 'Database not initialized',
+        dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db')
+      });
+    }
+    
+    // Try to query users table
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    res.json({ 
+      status: 'ok', 
+      message: 'Database is working',
+      userCount: userCount.count,
+      dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db')
+    });
+  } catch (error) {
+    res.json({ 
+      status: 'error', 
+      message: error.message,
+      stack: error.stack,
+      dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db')
+    });
+  }
+});
+
 // Serve React build in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));

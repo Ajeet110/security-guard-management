@@ -26,12 +26,17 @@ const initDatabase = async () => {
   // Load existing database or create new one
   let buffer;
   try {
+    console.log(`📁 Checking for existing database at: ${dbPath}`);
     buffer = fs.readFileSync(dbPath);
+    console.log(`✅ Found existing database file (${buffer.length} bytes)`);
   } catch (err) {
+    console.log(`ℹ️ No existing database found, will create new one: ${err.message}`);
     buffer = null;
   }
 
+  console.log('🔄 Creating sql.js database instance...');
   db = new SQL.Database(buffer);
+  console.log('✅ Database instance created successfully');
 
   // Add display_password column if it doesn't exist (migration)
   try {
@@ -109,6 +114,7 @@ const initDatabase = async () => {
   }
 
   // Create tables
+  console.log('🔄 Creating database tables...');
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -131,6 +137,7 @@ const initDatabase = async () => {
       FOREIGN KEY (created_by) REFERENCES users(id)
     )
   `);
+  console.log('✅ Users table created/verified');
 
   db.run(`
     CREATE TABLE IF NOT EXISTS documents (
@@ -233,12 +240,14 @@ const initDatabase = async () => {
   `);
 
   // Create owner account if not exists
+  console.log('🔄 Checking for owner account...');
   const ownerCheck = db.prepare("SELECT * FROM users WHERE user_id = ?");
   ownerCheck.bind(['2026']);
   const ownerExists = ownerCheck.step();
   ownerCheck.free();
   
   if (!ownerExists) {
+    console.log('🔄 Creating owner account...');
     const hashedPassword = bcrypt.hashSync('owner123', 10);
     const stmt = db.prepare(
       "INSERT INTO users (user_id, password, display_password, name, role, created_by) VALUES (?, ?, ?, ?, ?, NULL)"
@@ -249,6 +258,7 @@ const initDatabase = async () => {
     saveDatabase();
     console.log('✅ Owner account created - ID: 2026, Password: owner123');
   } else {
+    console.log('ℹ️ Owner account already exists');
     // Update owner's display password if not set
     const updateStmt = db.prepare("UPDATE users SET display_password = ? WHERE user_id = ? AND display_password IS NULL");
     updateStmt.bind(['owner123', '2026']);
