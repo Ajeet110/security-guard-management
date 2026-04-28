@@ -161,6 +161,11 @@ const initDatabase = async () => {
       latitude REAL,
       longitude REAL,
       marked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      is_verified INTEGER DEFAULT 0,
+      is_rejected INTEGER DEFAULT 0,
+      rejection_reason TEXT,
+      verified_by INTEGER,
+      verified_at DATETIME,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
