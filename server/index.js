@@ -6,7 +6,12 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
-const db = require('./database/db');
+// Use production database in production environment
+const dbModule = process.env.NODE_ENV === 'production' 
+  ? require('./database/db-production')
+  : require('./database/db');
+const db = dbModule;
+
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const chatRoutes = require('./routes/chat');

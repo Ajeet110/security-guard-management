@@ -28,16 +28,29 @@ const generateRefreshToken = (user) => {
 router.post('/login', (req, res) => {
   const { user_id, password } = req.body;
 
+  console.log('🔐 Login attempt for user:', user_id);
+
   if (!user_id || !password) {
+    console.log('❌ Missing credentials');
     return res.status(400).json({ error: 'User ID and password required' });
   }
 
   try {
     const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(user_id);
 
-    if (!user || !bcrypt.compareSync(password, user.password)) {
+    if (!user) {
+      console.log('❌ User not found:', user_id);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    console.log('✅ User found:', user.name);
+
+    if (!bcrypt.compareSync(password, user.password)) {
+      console.log('❌ Password mismatch for user:', user_id);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    console.log('✅ Password verified for user:', user_id);
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -63,6 +76,8 @@ router.post('/login', (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
+    console.log('✅ Login successful for user:', user_id);
+
     res.json({
       message: 'Login successful',
       user: {
@@ -75,8 +90,9 @@ router.post('/login', (req, res) => {
       accessToken
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('❌ Login error:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ error: 'Login failed', details: error.message });
   }
 });
 
