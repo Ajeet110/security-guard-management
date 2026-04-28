@@ -36,6 +36,7 @@ router.post('/login', (req, res) => {
   }
 
   try {
+    console.log('🔄 Querying database for user:', user_id);
     const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(user_id);
 
     if (!user) {
@@ -43,9 +44,15 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    console.log('✅ User found:', user.name);
+    console.log('✅ User found:', user.name, 'ID:', user.id);
+    console.log('🔄 Comparing passwords...');
+    console.log('Stored hash:', user.password);
+    console.log('Input password:', password);
 
-    if (!bcrypt.compareSync(password, user.password)) {
+    const passwordMatch = bcrypt.compareSync(password, user.password);
+    console.log('Password match result:', passwordMatch);
+
+    if (!passwordMatch) {
       console.log('❌ Password mismatch for user:', user_id);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -55,6 +62,7 @@ router.post('/login', (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
+    console.log('🔄 Storing refresh token...');
     // Store refresh token
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     db.prepare('INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(
@@ -62,9 +70,11 @@ router.post('/login', (req, res) => {
       refreshToken,
       expiresAt.toISOString()
     );
+    console.log('✅ Refresh token stored');
 
     // Set cookies
     const isProduction = process.env.NODE_ENV === 'production';
+    console.log('🔄 Setting cookies (production:', isProduction, ')');
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: isProduction,
@@ -94,8 +104,10 @@ router.post('/login', (req, res) => {
     });
   } catch (error) {
     console.error('❌ Login error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
     console.error('Stack trace:', error.stack);
-    res.status(500).json({ error: 'Login failed', details: error.message });
+    res.status(500).json({ error: 'Login failed', details: error.message, stack: error.stack });
   }
 });
 
