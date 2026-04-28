@@ -28,13 +28,21 @@ services:
       - key: CLIENT_URL
         value: https://security-guard-management-ffxs.onrender.com
         
+      # CRITICAL: Database path MUST match disk mountPath
+      # This ensures database persists across restarts
       - key: DATABASE_URL
         value: /opt/render/project/src/server/database/secureguard.db
         
+      # CRITICAL: Uploads path MUST match disk mountPath
+      # This ensures uploaded files (photos, documents) persist
       - key: UPLOADS_DIR
         value: /opt/render/project/src/uploads
 
-    # Persistent disk for database and uploads
+    # CRITICAL: Persistent disk prevents data loss
+    # Without this disk, database and uploads are deleted on every restart!
+    # Free tier allows 1 GB persistent storage
+    # If disk is not created automatically, add it manually in Render Dashboard:
+    # Dashboard → Your Service → Disks → Add Disk
     disk:
       name: data
       mountPath: /opt/render/project/src

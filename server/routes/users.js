@@ -6,6 +6,7 @@ const fs = require('fs');
 const { db } = require('../database/db');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const { addUserToRoleGroups } = require('./groups');
+const { getISTTimestamp } = require('../utils/dateUtils');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = getISTTimestamp() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
@@ -43,14 +44,18 @@ const upload = multer({
   }
 });
 
-// Generate unique user ID (YYYYMMDDHHMM)
+// Generate unique user ID (YYYYMMDDHHMM) using IST
 const generateUserId = () => {
   const now = new Date();
-  return now.getFullYear().toString() +
-    (now.getMonth() + 1).toString().padStart(2, '0') +
-    now.getDate().toString().padStart(2, '0') +
-    now.getHours().toString().padStart(2, '0') +
-    now.getMinutes().toString().padStart(2, '0');
+  // Convert to IST (UTC+5:30)
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+  const istTime = new Date(now.getTime() + istOffset);
+  
+  return istTime.getUTCFullYear().toString() +
+    (istTime.getUTCMonth() + 1).toString().padStart(2, '0') +
+    istTime.getUTCDate().toString().padStart(2, '0') +
+    istTime.getUTCHours().toString().padStart(2, '0') +
+    istTime.getUTCMinutes().toString().padStart(2, '0');
 };
 
 // Create user

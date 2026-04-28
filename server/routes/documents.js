@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const { db } = require('../database/db');
 const { authenticateToken } = require('../middleware/auth');
+const { getISTTimestamp } = require('../utils/dateUtils');
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/documents/');
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${req.user.id}-${req.body.doc_type}${path.extname(file.originalname)}`;
+    const uniqueName = `${getISTTimestamp()}-${req.user.id}-${req.body.doc_type}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   }
 });
@@ -38,7 +39,7 @@ router.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
     return res.status(400).json({ error: 'File required' });
   }
 
-  const validTypes = ['aadhaar', 'pan', 'police_verification', 'bank_passbook', 'profile_photo'];
+  const validTypes = ['aadhaar', 'pan', 'police_verification', 'bank_passbook', '10th_marksheet', '12th_marksheet', 'profile_photo'];
   if (!validTypes.includes(doc_type)) {
     return res.status(400).json({ error: 'Invalid document type' });
   }

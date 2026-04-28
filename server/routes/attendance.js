@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const { db } = require('../database/db');
 const { authenticateToken } = require('../middleware/auth');
-const { getLocalTimestamp, getLocalDate } = require('../utils/dateUtils');
+const { getLocalTimestamp, getLocalDate, getISTTimestamp } = require('../utils/dateUtils');
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/attendance/');
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${req.user.id}${path.extname(file.originalname)}`;
+    const uniqueName = `${getISTTimestamp()}-${req.user.id}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   }
 });

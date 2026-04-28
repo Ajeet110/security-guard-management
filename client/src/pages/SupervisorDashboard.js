@@ -1083,7 +1083,7 @@ const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
         rel="noopener noreferrer"
         style={{
           position: 'fixed',
-          bottom: '20px',
+          bottom: window.innerWidth <= 768 ? '80px' : '20px', // Higher on mobile to avoid navbar
           right: '20px',
           padding: '10px 16px',
           borderRadius: '8px',

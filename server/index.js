@@ -15,6 +15,8 @@ const documentRoutes = require('./routes/documents');
 const managementRoutes = require('./routes/management');
 const { router: groupsRoutes } = require('./routes/groups');
 const socketHandler = require('./socket/socketHandler');
+const { authenticateToken } = require('./middleware/auth');
+const { fileAccessControl } = require('./middleware/fileAccess');
 
 const app = express();
 const server = http.createServer(app);
@@ -104,6 +106,27 @@ app.get('/api/health', (req, res) => {
       message: 'Health check failed',
       error: error.message,
       healthy: false,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Debug endpoint to check IST time
+app.get('/api/debug/time', (req, res) => {
+  try {
+    const { getISTInfo } = require('./utils/dateUtils');
+    const timeInfo = getISTInfo();
+    
+    res.json({
+      status: 'ok',
+      message: 'IST Time Debug Information',
+      ...timeInfo,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({
+      status: 'error',
+      message: error.message,
       timestamp: new Date().toISOString()
     });
   }

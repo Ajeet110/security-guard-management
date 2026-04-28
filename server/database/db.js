@@ -189,6 +189,86 @@ const initDatabase = async () => {
     )
   `);
 
+  // Migration: Update documents table to support 10th and 12th marksheet
+  try {
+    // Check if we need to migrate by trying to insert a test record with new doc_type
+    const testStmt = db.prepare("SELECT doc_type FROM documents WHERE doc_type = '10th_marksheet' LIMIT 1");
+    testStmt.step();
+    testStmt.free();
+    
+    // If we reach here, the constraint might be old, let's recreate the table
+    console.log('🔄 Migrating documents table to support marksheets...');
+    
+    // Get existing data
+    const existingDocs = [];
+    const selectStmt = db.prepare("SELECT * FROM documents");
+    const columns = selectStmt.getColumnNames();
+    
+    while (selectStmt.step()) {
+      const values = selectStmt.get();
+      const doc = {};
+      columns.forEach((col, i) => {
+        doc[col] = values[i];
+      });
+      existingDocs.push(doc);
+    }
+    selectStmt.free();
+    
+    // Drop old table
+    db.run("DROP TABLE IF EXISTS documents_old");
+    db.run("ALTER TABLE documents RENAME TO documents_old");
+    
+    // Create new table with updated constraint
+    db.run(`
+      CREATE TABLE documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        doc_type TEXT NOT NULL CHECK(doc_type IN ('aadhaar', 'pan', 'police_verification', 'bank_passbook', '10th_marksheet', '12th_marksheet')),
+        file_path TEXT NOT NULL,
+        is_verified INTEGER DEFAULT 0,
+        is_rejected INTEGER DEFAULT 0,
+        rejection_reason TEXT,
+        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+    
+    // Restore data
+    if (existingDocs.length > 0) {
+      const insertStmt = db.prepare(`
+        INSERT INTO documents (id, user_id, doc_type, file_path, is_verified, is_rejected, rejection_reason, uploaded_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      existingDocs.forEach(doc => {
+        insertStmt.bind([
+          doc.id,
+          doc.user_id,
+          doc.doc_type,
+          doc.file_path,
+          doc.is_verified,
+          doc.is_rejected,
+          doc.rejection_reason,
+          doc.uploaded_at
+        ]);
+        insertStmt.step();
+        insertStmt.reset();
+      });
+      insertStmt.free();
+      
+      console.log(`✅ Migrated ${existingDocs.length} documents to new table`);
+    }
+    
+    // Drop old table
+    db.run("DROP TABLE IF EXISTS documents_old");
+    
+    saveDatabase();
+    console.log('✅ Documents table migration completed');
+  } catch (err) {
+    // Migration already done or not needed
+    console.log('ℹ️ Documents table migration not needed or already completed');
+  }
+
   db.run(`
     CREATE TABLE IF NOT EXISTS attendance (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -291,79 +371,125 @@ const initDatabase = async () => {
     console.log('🔄 Creating owner account...');
     const hashedPassword = bcrypt.hashSync('owner123', 10);
     const stmt = db.prepare(
-      "INSERT INTO users (user_id, password, display_password, name, role, created_by) VALUES (?, ?, ?, ?, ?, NULL)"
+      "INSERT INTO users (user_id, password, name, role, created_by) VALUES (?, ?, ?, ?, NULL)"
     );
-    stmt.bind(['2026', hashedPassword, 'owner123', 'System Owner', 'Owner']);
+    stmt.bind(['2026', hashedPassword, 'System Owner', 'Owner']);
     stmt.step();
     stmt.free();
     saveDatabase();
     console.log('✅ Owner account created - ID: 2026, Password: owner123');
   } else {
     console.log('ℹ️ Owner account already exists');
-    // Update owner's display password if not set
-    const updateStmt = db.prepare("UPDATE users SET display_password = ? WHERE user_id = ? AND display_password IS NULL");
-    updateStmt.bind(['owner123', '2026']);
-    updateStmt.step();
-    updateStmt.free();
-    saveDatabase();
   }
 
-  // Set default display passwords for all users without one
+  // Remove display_password column for security (if it exists)
   try {
-    const usersWithoutPassword = db.prepare("SELECT id, user_id, role FROM users WHERE display_password IS NULL OR display_password = 'guard123'");
-    const users = [];
-    
-    while (usersWithoutPassword.step()) {
-      const values = usersWithoutPassword.get();
-      users.push({
-        id: values[0],
-        user_id: values[1],
-        role: values[2]
-      });
+    // Check if display_password column exists
+    const tableInfo = db.prepare("PRAGMA table_info(users)");
+    const columns = [];
+    while (tableInfo.step()) {
+      const values = tableInfo.get();
+      columns.push(values[1]); // Column name is at index 1
     }
-    usersWithoutPassword.free();
+    tableInfo.free();
 
-    // Update each user with a proper password based on role
-    users.forEach(user => {
-      let defaultPassword;
+    if (columns.includes('display_password')) {
+      console.log('🔄 Removing insecure display_password column...');
       
-      switch (user.role) {
-        case 'Owner':
-          defaultPassword = 'owner123';
-          break;
-        case 'Manager':
-          defaultPassword = `Mgr@${user.user_id.slice(-4)}`;
-          break;
-        case 'Supervisor':
-          defaultPassword = `Sup@${user.user_id.slice(-4)}`;
-          break;
-        case 'Guard':
-          defaultPassword = `Grd@${user.user_id.slice(-4)}`;
-          break;
-        default:
-          defaultPassword = 'guard123';
+      // Get existing data without display_password
+      const existingUsers = [];
+      const selectStmt = db.prepare("SELECT id, user_id, password, name, role, parent_id, mobile, email, location, shift, profile_photo, created_by, created_at, last_seen, is_online FROM users");
+      
+      while (selectStmt.step()) {
+        const values = selectStmt.get();
+        existingUsers.push({
+          id: values[0],
+          user_id: values[1],
+          password: values[2],
+          name: values[3],
+          role: values[4],
+          parent_id: values[5],
+          mobile: values[6],
+          email: values[7],
+          location: values[8],
+          shift: values[9],
+          profile_photo: values[10],
+          created_by: values[11],
+          created_at: values[12],
+          last_seen: values[13],
+          is_online: values[14]
+        });
+      }
+      selectStmt.free();
+      
+      // Drop old table and recreate without display_password
+      db.run("DROP TABLE IF EXISTS users_old");
+      db.run("ALTER TABLE users RENAME TO users_old");
+      
+      // Create new users table without display_password
+      db.run(`
+        CREATE TABLE users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          name TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('Owner', 'Manager', 'Supervisor', 'Guard')),
+          parent_id INTEGER,
+          mobile TEXT,
+          email TEXT,
+          location TEXT,
+          shift TEXT,
+          profile_photo TEXT,
+          created_by INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_seen DATETIME,
+          is_online INTEGER DEFAULT 0,
+          FOREIGN KEY (parent_id) REFERENCES users(id),
+          FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+      `);
+      
+      // Restore data
+      if (existingUsers.length > 0) {
+        const insertStmt = db.prepare(`
+          INSERT INTO users (id, user_id, password, name, role, parent_id, mobile, email, location, shift, profile_photo, created_by, created_at, last_seen, is_online)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        
+        existingUsers.forEach(user => {
+          insertStmt.bind([
+            user.id,
+            user.user_id,
+            user.password,
+            user.name,
+            user.role,
+            user.parent_id,
+            user.mobile,
+            user.email,
+            user.location,
+            user.shift,
+            user.profile_photo,
+            user.created_by,
+            user.created_at,
+            user.last_seen,
+            user.is_online
+          ]);
+          insertStmt.step();
+          insertStmt.reset();
+        });
+        insertStmt.free();
+        
+        console.log(`✅ Migrated ${existingUsers.length} users without display_password`);
       }
       
-      // Update display password
-      const updateStmt = db.prepare("UPDATE users SET display_password = ? WHERE id = ?");
-      updateStmt.bind([defaultPassword, user.id]);
-      updateStmt.step();
-      updateStmt.free();
-
-      // Also update the hashed password
-      const hashedPassword = bcrypt.hashSync(defaultPassword, 10);
-      const updateHashStmt = db.prepare("UPDATE users SET password = ? WHERE id = ?");
-      updateHashStmt.bind([hashedPassword, user.id]);
-      updateHashStmt.step();
-      updateHashStmt.free();
-    });
-
-    if (users.length > 0) {
+      // Drop old table
+      db.run("DROP TABLE IF EXISTS users_old");
+      
       saveDatabase();
-      console.log(`✅ Set proper passwords for ${users.length} users`);
+      console.log('✅ Removed insecure display_password column');
     }
   } catch (err) {
-    console.error('Error setting default passwords:', err);
+    console.log('ℹ️ display_password column migration not needed or already completed');
   }
 
   // Create indexes for performance optimization

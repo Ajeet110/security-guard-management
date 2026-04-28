@@ -196,7 +196,10 @@ router.get('/attendance/report', authenticateToken, authorizeRoles('Owner', 'Man
       // Get all descendants
       const descendants = getDescendantIds(req.user.id);
       if (descendants.length > 0) {
-        query += ` AND u.id IN (${descendants.join(',')})`;
+        // Use parameterized query instead of string interpolation
+        const placeholders = descendants.map(() => '?').join(',');
+        query += ` AND u.id IN (${placeholders})`;
+        params.push(...descendants);
       }
     }
 
@@ -269,7 +272,10 @@ router.get('/attendance/stats', authenticateToken, authorizeRoles('Owner', 'Mana
     } else if (req.user.role === 'Manager') {
       const descendants = getDescendantIds(req.user.id);
       if (descendants.length > 0) {
-        guardsQuery += ` AND id IN (${descendants.join(',')})`;
+        // Use parameterized query instead of string interpolation
+        const placeholders = descendants.map(() => '?').join(',');
+        guardsQuery += ` AND id IN (${placeholders})`;
+        guardsParams.push(...descendants);
       }
     }
 
@@ -278,12 +284,23 @@ router.get('/attendance/stats', authenticateToken, authorizeRoles('Owner', 'Mana
 
     // Get attendance for each date
     const stats = dates.map(date => {
-      const attendanceCount = db.prepare(`
+      let attendanceQuery = `
         SELECT COUNT(DISTINCT user_id) as count
         FROM attendance
         WHERE DATE(marked_at) = ?
-        AND user_id IN (${guards.map(g => g.id).join(',') || '0'})
-      `).get(date);
+      `;
+      const attendanceParams = [date];
+
+      if (guards.length > 0) {
+        const placeholders = guards.map(() => '?').join(',');
+        attendanceQuery += ` AND user_id IN (${placeholders})`;
+        attendanceParams.push(...guards.map(g => g.id));
+      } else {
+        // No guards found, return 0
+        attendanceQuery += ` AND user_id IN (0)`;
+      }
+
+      const attendanceCount = db.prepare(attendanceQuery).get(...attendanceParams);
 
       return {
         date,

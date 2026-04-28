@@ -48,6 +48,22 @@ module.exports = (io) => {
       const { conversation_id, content, reply_to } = data;
 
       try {
+        // Validate input
+        if (!conversation_id || !content || content.trim().length === 0) {
+          socket.emit('message_error', { error: 'Invalid message data' });
+          return;
+        }
+
+        // Check if user is participant of this conversation
+        const isParticipant = db.db.prepare(`
+          SELECT 1 FROM conversation_participants 
+          WHERE conversation_id = ? AND user_id = ?
+        `).get(conversation_id, socket.userId);
+
+        if (!isParticipant) {
+          socket.emit('message_error', { error: 'Not a participant of this conversation' });
+          return;
+        }
         const result = db.db.prepare(`
           INSERT INTO messages (conversation_id, sender_id, content, reply_to)
           VALUES (?, ?, ?, ?)

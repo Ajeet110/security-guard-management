@@ -411,17 +411,31 @@ const GuardDashboard = () => {
     e.preventDefault();
     if (!newMessage.trim() || !activeChat) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage(''); // Clear input immediately for better UX
+
     try {
-      await api.post('/chat/message', {
+      const response = await api.post('/chat/message', {
         conversation_id: activeChat.id,
-        content: newMessage.trim()
+        content: messageContent
       });
       
-      setNewMessage('');
-      // Don't fetch messages here - socket will handle real-time update
+      // Message sent successfully
+      console.log('Message sent successfully:', response.data);
+      
+      // Socket will handle real-time update, but fetch as fallback
+      setTimeout(() => {
+        fetchMessages(activeChat.id);
+      }, 500);
     } catch (error) {
       console.error('Send message error:', error);
-      alert('Failed to send message');
+      
+      // Restore message in input if send failed
+      setNewMessage(messageContent);
+      
+      // Show user-friendly error message
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to send message';
+      alert(`Could not send message: ${errorMessage}\n\nPlease check your connection and try again.`);
     }
   };
 
@@ -746,14 +760,21 @@ const GuardDashboard = () => {
         : otherUser?.name || 'Unknown';
 
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '100%',
+          maxHeight: 'calc(100vh - 120px)', // Account for header and bottom nav
+          overflow: 'hidden'
+        }}>
           <div style={{
             padding: '12px 16px',
             borderBottom: '1px solid var(--bd)',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            background: 'var(--bg3)'
+            background: 'var(--bg3)',
+            flexShrink: 0
           }}>
             <button 
               onClick={() => setActiveChat(null)}
@@ -855,7 +876,9 @@ const GuardDashboard = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            borderTop: '1px solid var(--bd)'
+            borderTop: '1px solid var(--bd)',
+            flexShrink: 0,
+            minHeight: '60px'
           }}>
             <input
               type="text"
@@ -1648,7 +1671,7 @@ const GuardDashboard = () => {
         rel="noopener noreferrer"
         style={{
           position: 'fixed',
-          bottom: '80px',
+          bottom: window.innerWidth <= 768 ? '140px' : '80px', // Higher on mobile to avoid chat input
           right: '20px',
           padding: '10px 16px',
           borderRadius: '8px',

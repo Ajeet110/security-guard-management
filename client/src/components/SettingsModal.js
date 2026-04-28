@@ -427,13 +427,15 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>
                   Document Status
                 </div>
-                {['aadhaar', 'pan', 'police_verification', 'bank_passbook'].map(docType => {
+                {['aadhaar', 'pan', 'police_verification', 'bank_passbook', '10th_marksheet', '12th_marksheet'].map(docType => {
                   const status = getDocumentStatus(docType);
                   const labels = {
                     aadhaar: 'Aadhaar Card',
                     pan: 'PAN Card',
                     police_verification: 'Police Verification',
-                    bank_passbook: 'Bank Passbook'
+                    bank_passbook: 'Bank Passbook',
+                    '10th_marksheet': '10th Marksheet',
+                    '12th_marksheet': '12th Marksheet'
                   };
                   
                   return (
@@ -476,6 +478,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     <option value="pan">PAN Card</option>
                     <option value="police_verification">Police Verification</option>
                     <option value="bank_passbook">Bank Passbook</option>
+                    <option value="10th_marksheet">10th Marksheet</option>
+                    <option value="12th_marksheet">12th Marksheet</option>
                   </select>
                 </div>
 
