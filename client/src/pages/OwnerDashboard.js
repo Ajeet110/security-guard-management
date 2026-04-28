@@ -8,6 +8,7 @@ import GroupManagementModal from '../components/GroupManagementModal';
 import SettingsModal from '../components/SettingsModal';
 import AttendanceDashboard from '../components/AttendanceDashboard';
 import { useAuth, api } from '../context/AuthContext';
+import { getBaseURL } from '../config/api';
 
 const OwnerDashboard = () => {
   const { user } = useAuth();
@@ -46,10 +47,7 @@ const OwnerDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const usersRes = await axios.get(`${API_URL}/users/hierarchy`, {
-        withCredentials: true
-      });
+      const usersRes = await api.get('/users/hierarchy');
       const users = usersRes.data;
       setAllUsers(users);
 
@@ -271,9 +269,7 @@ const AddUserModal = ({ onClose }) => {
 
   const fetchParentOptions = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/users/hierarchy', {
-        withCredentials: true
-      });
+      const res = await api.get('/users/hierarchy');
       setManagers(res.data.filter(u => u.role === 'Manager'));
       setSupervisors(res.data.filter(u => u.role === 'Supervisor'));
     } catch (error) {
@@ -299,9 +295,7 @@ const AddUserModal = ({ onClose }) => {
     setLoading(true);
 
     try {
-      await axios.post('http://localhost:5000/api/users/create', formData, {
-        withCredentials: true
-      });
+      await api.post('/users/create', formData);
       alert(`User ${formData.name} created successfully with ID: ${previewId}`);
       onClose();
     } catch (error) {
@@ -478,9 +472,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
 
   const fetchDocuments = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/user/${user.id}`, {
-        withCredentials: true
-      });
+      const response = await api.get(`/documents/user/${user.id}`);
       setDocuments(response.data);
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -499,9 +491,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
 
     setVerifying(docType);
     try {
-      await axios.post(`http://localhost:5000/api/documents/verify/${doc.id}`, {}, {
-        withCredentials: true
-      });
+      await api.post(`/documents/verify/${doc.id}`, {});
       alert('Document verified successfully!');
       fetchDocuments();
     } catch (error) {
@@ -530,10 +520,8 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
     setRejecting(rejectDocType);
     try {
       console.log('Sending reject request for document ID:', doc.id);
-      await axios.post(`http://localhost:5000/api/documents/reject/${doc.id}`, {
+      await api.post(`/documents/reject/${doc.id}`, {
         reason: rejectionReason
-      }, {
-        withCredentials: true
       });
       alert(`Document rejected and deleted. Reason: ${rejectionReason}`);
       setShowRejectModal(false);
@@ -558,9 +546,8 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
   const handleStartChat = async () => {
     setStartingChat(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/chat/conversation/personal', 
-        { user_id: user.id },
-        { withCredentials: true }
+      const response = await api.post('/chat/conversation/personal', 
+        { user_id: user.id }
       );
       
       // Close modal and open chat
@@ -763,7 +750,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
                         <>
                           {!isVerified && (
                             <a
-                              href={`http://localhost:5000/${status.doc.file_path}`}
+                              href={`${getBaseURL()}/${status.doc.file_path}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
@@ -785,7 +772,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
                           )}
                           {isVerified && (
                             <a
-                              href={`http://localhost:5000/${status.doc.file_path}`}
+                              href={`${getBaseURL()}/${status.doc.file_path}`}
                               download
                               onClick={(e) => e.stopPropagation()}
                               style={{
@@ -874,9 +861,8 @@ const UserListModal = ({ role, users, onClose, onUserClick, onManageClick, onOpe
     e.stopPropagation();
     setStartingChat(userId);
     try {
-      const response = await axios.post('http://localhost:5000/api/chat/conversation/personal', 
-        { user_id: userId },
-        { withCredentials: true }
+      const response = await api.post('/chat/conversation/personal', 
+        { user_id: userId }
       );
       
       // Close modal and open chat
