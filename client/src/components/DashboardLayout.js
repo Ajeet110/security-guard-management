@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { api } from '../context/AuthContext';
 import { useAuth, api } from '../context/AuthContext';
 import Avatar from './Avatar';
 import HierarchyTree from './HierarchyTree';

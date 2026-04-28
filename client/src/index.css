@@ -451,7 +451,7 @@ code {
 }
 
 /* Danger Button with Glow */
-.btn-danger {
+.btn-danger, .btn-d {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   border: none;
@@ -465,7 +465,7 @@ code {
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-.btn-danger:hover {
+.btn-danger:hover, .btn-d:hover {
   transform: translateY(-3px);
   box-shadow: 
     0 10px 28px rgba(239, 68, 68, 0.4),
@@ -474,7 +474,7 @@ code {
   background: linear-gradient(135deg, #f87171, #ef4444);
 }
 
-.btn-danger:active {
+.btn-danger:active, .btn-d:active {
   transform: translateY(-1px);
 }
 
@@ -1739,7 +1739,7 @@ code {
 }
 
 .bottom-nav {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
@@ -1747,6 +1747,9 @@ code {
   border-top: 1px solid var(--bd);
   display: flex;
   padding: 6px 0;
+  z-index: 100;
+  max-width: 430px;
+  margin: 0 auto;
 }
 
 .nav-btn {

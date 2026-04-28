@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../context/AuthContext';
 import { useAuth, api } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import Avatar from './Avatar';

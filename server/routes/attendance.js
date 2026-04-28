@@ -79,12 +79,12 @@ router.post('/mark', authenticateToken, upload.single('photo'), (req, res) => {
       }
     }
 
-    // Insert attendance record with India timezone timestamp
-    const indiaTimestamp = indiaTime.toISOString().replace('T', ' ').slice(0, 19);
+    // Insert attendance record with local timezone timestamp
+    const localTimestamp = getLocalTimestamp();
     const result = db.prepare(`
       INSERT INTO attendance (user_id, photo_path, latitude, longitude, marked_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(req.user.id, req.file.path, latitude || null, longitude || null, indiaTimestamp);
+    `).run(req.user.id, req.file.path, latitude || null, longitude || null, localTimestamp);
 
     // Get the inserted record with full details
     const attendanceRecord = db.prepare(`
