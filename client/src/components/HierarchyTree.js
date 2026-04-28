@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import Avatar from './Avatar';
 
 const HierarchyTree = ({ userId, depth = 0 }) => {
@@ -15,16 +15,12 @@ const HierarchyTree = ({ userId, depth = 0 }) => {
   const fetchUserAndChildren = async () => {
     try {
       // Fetch user details
-      const userRes = await axios.get(`http://localhost:5000/api/users/${userId}`, {
-        withCredentials: true
-      });
+      const userRes = await api.get(`/users/${userId}/profile`);
       setUser(userRes.data);
 
-      // Fetch children
-      const childrenRes = await axios.get(`http://localhost:5000/api/users?parent_id=${userId}`, {
-        withCredentials: true
-      });
-      setChildren(childrenRes.data || []);
+      // Fetch children from hierarchy
+      const childrenRes = await api.get(`/users/hierarchy`);
+      setChildren((childrenRes.data || []).filter(u => u.parent_id === userRes.data.id));
     } catch (error) {
       console.error('Error fetching hierarchy:', error);
     } finally {

@@ -26,10 +26,7 @@ services:
         value: your-refresh-secret-key-change-this-in-production-789012
       
       - key: CLIENT_URL
-        fromService:
-          type: web
-          name: secureguard-connect
-          property: url
+        value: https://security-guard-management-ffxs.onrender.com
         
       - key: DATABASE_URL
         value: /opt/render/project/src/server/database/secureguard.db

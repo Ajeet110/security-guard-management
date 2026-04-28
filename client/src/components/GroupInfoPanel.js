@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import Avatar from './Avatar';
 
@@ -75,7 +75,7 @@ const GroupInfoPanel = ({ conversation, onClose, currentUser }) => {
 
   const loadGroupInfo = async () => {
     try {
-      const response = await axios.get(`/chat/conversation/${conversation.id}/info`);
+      const response = await api.get(`/chat/conversation/${conversation.id}/info`);
       setMembers(response.data.members || []);
     } catch (error) {
       console.error('Load group info error:', error);
@@ -84,7 +84,7 @@ const GroupInfoPanel = ({ conversation, onClose, currentUser }) => {
 
   const loadAllUsers = async () => {
     try {
-      const response = await axios.get('/users/all');
+      const response = await api.get('/users/all');
       setAllUsers(response.data);
     } catch (error) {
       console.error('Load users error:', error);
@@ -99,7 +99,7 @@ const GroupInfoPanel = ({ conversation, onClose, currentUser }) => {
 
     setLoading(true);
     try {
-      await axios.put(`/chat/conversation/${conversation.id}/description`, {
+      await api.put(`/chat/conversation/${conversation.id}/description`, {
         description: descriptionText
       });
       setIsEditingDescription(false);
@@ -118,7 +118,7 @@ const GroupInfoPanel = ({ conversation, onClose, currentUser }) => {
 
     setLoading(true);
     try {
-      await axios.delete(`/chat/conversation/${conversation.id}/members/${userId}`);
+      await api.delete(`/chat/conversation/${conversation.id}/members/${userId}`);
       loadGroupInfo();
     } catch (error) {
       console.error('Remove member error:', error);
@@ -136,7 +136,7 @@ const GroupInfoPanel = ({ conversation, onClose, currentUser }) => {
 
     setLoading(true);
     try {
-      await axios.post(`/chat/conversation/${conversation.id}/members`, {
+      await api.post(`/chat/conversation/${conversation.id}/members`, {
         user_ids: selectedMembers
       });
       setShowAddMembers(false);

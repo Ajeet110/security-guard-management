@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import Avatar from './Avatar';
 
 const ProfileViewer = ({ userId, onClose }) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 
 const GroupManagementModal = ({ onClose }) => {
   const [groups, setGroups] = useState([]);
@@ -14,7 +14,7 @@ const GroupManagementModal = ({ onClose }) => {
   const fetchGroups = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/groups/default');
+      const res = await api.get('/groups/default');
       setGroups(res.data);
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -30,7 +30,7 @@ const GroupManagementModal = ({ onClose }) => {
 
     setInitializing(true);
     try {
-      await axios.post('/groups/initialize');
+      await api.post('/groups/initialize');
       alert('Groups initialized successfully!');
       fetchGroups();
     } catch (error) {
@@ -47,7 +47,7 @@ const GroupManagementModal = ({ onClose }) => {
 
     setSyncing(true);
     try {
-      const res = await axios.post('/groups/sync');
+      const res = await api.post('/groups/sync');
       alert(`Groups synced successfully! ${res.data.synced_count} memberships updated.`);
       fetchGroups();
     } catch (error) {

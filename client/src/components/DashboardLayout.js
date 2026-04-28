@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import { useAuth, api } from '../context/AuthContext';
 import Avatar from './Avatar';
 import HierarchyTree from './HierarchyTree';
@@ -248,7 +248,7 @@ const SearchUsersModal = ({ onClose }) => {
     
     setSearching(true);
     try {
-      const response = await axios.get(`/users/search?query=${encodeURIComponent(query)}`);
+      const response = await api.get(`/users/search?query=${encodeURIComponent(query)}`);
       setSearchResults(response.data);
     } catch (error) {
       console.error('Search error:', error);

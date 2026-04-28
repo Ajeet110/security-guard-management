@@ -827,7 +827,7 @@ const AttendanceDashboard = ({ userRole, userId }) => {
                 background: 'var(--bg1)'
               }}>
                 <img
-                  src={`http://localhost:5000/${selectedAttendance.attendance?.photo_path}`}
+                  src={`${window.location.origin}/${selectedAttendance.attendance?.photo_path}`}
                   alt="Attendance"
                   style={{
                     width: '100%',

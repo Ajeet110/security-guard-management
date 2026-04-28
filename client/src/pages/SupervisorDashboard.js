@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, api } from '../context/AuthContext';
+import { getBaseURL } from '../config/api';
 import DashboardLayout from '../components/DashboardLayout';
 import Avatar from '../components/Avatar';
 import UserManagementModal from '../components/UserManagementModal';
@@ -34,9 +34,7 @@ const SupervisorDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       // Fetch all users
-      const usersRes = await axios.get('http://localhost:5000/api/users/hierarchy', {
-        withCredentials: true
-      });
+      const usersRes = await api.get('/"users/hierarchy');
       const users = usersRes.data;
 
       // Get guards under this supervisor
@@ -45,9 +43,7 @@ const SupervisorDashboard = () => {
 
       // Fetch attendance for today
       const today = new Date().toISOString().split('T')[0];
-      const attendanceRes = await axios.get(`http://localhost:5000/api/attendance?date=${today}`, {
-        withCredentials: true
-      });
+      const attendanceRes = await axios.get(`${getBaseURL()}/api/attendance?date=${today}`);
       
       const presentGuards = attendanceRes.data.filter(a => 
         guards.some(g => g.id === a.user_id)
@@ -271,9 +267,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
 
   const fetchDocuments = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/user/${user.id}`, {
-        withCredentials: true
-      });
+      const response = await axios.get(`${getBaseURL()}/api/documents/user/${user.id}`);
       setDocuments(response.data);
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -292,9 +286,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
 
     setVerifying(docType);
     try {
-      await axios.post(`http://localhost:5000/api/documents/verify/${doc.id}`, {}, {
-        withCredentials: true
-      });
+      await axios.post(`${getBaseURL()}/api/documents/verify/${doc.id}`, {});
       alert('Document verified successfully!');
       fetchDocuments();
       if (onRefresh) onRefresh();
@@ -324,10 +316,8 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
     setRejecting(rejectDocType);
     try {
       console.log('Sending reject request for document ID:', doc.id);
-      await axios.post(`http://localhost:5000/api/documents/reject/${doc.id}`, {
+      await axios.post(`${getBaseURL()}/api/documents/reject/${doc.id}`, {
         reason: rejectionReason
-      }, {
-        withCredentials: true
       });
       alert(`Document rejected and deleted. Reason: ${rejectionReason}`);
       setShowRejectModal(false);
@@ -353,10 +343,8 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
   const handleStartChat = async () => {
     setStartingChat(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/chat/conversation/personal', 
-        { user_id: user.id },
-        { withCredentials: true }
-      );
+      const response = await api.post('/"chat/conversation/personal', 
+        { user_id: user.id });
       
       onClose();
       if (onOpenChat) {
@@ -584,7 +572,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
                         <>
                           {!isVerified && (
                             <a
-                              href={`http://localhost:5000/${status.doc.file_path}`}
+                              href={`${getBaseURL()}/${status.doc.file_path}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
@@ -606,7 +594,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
                           )}
                           {isVerified && (
                             <a
-                              href={`http://localhost:5000/${status.doc.file_path}`}
+                              href={`${getBaseURL()}/${status.doc.file_path}`}
                               download
                               onClick={(e) => e.stopPropagation()}
                               style={{

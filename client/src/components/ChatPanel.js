@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import { useAuth, api } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import Avatar from './Avatar';
@@ -86,7 +86,7 @@ const ChatPanel = () => {
         setMessages(prev => [...prev, message]);
         // Mark as read immediately if chat is open
         setTimeout(() => {
-          axios.post('/chat/messages/read', {
+          api.post('/chat/messages/read', {
             message_ids: [message.id]
           }).catch(err => console.error('Mark read error:', err));
         }, 500);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import Avatar from './Avatar';
 
 const UserManagementModal = ({ user, onClose, onUpdate }) => {
@@ -23,7 +23,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
 
   const fetchAvailableParents = async () => {
     try {
-      const res = await axios.get('/users/hierarchy');
+      const res = await api.get('/users/hierarchy');
       let parents = [];
 
       if (user.role === 'Guard') {
@@ -49,7 +49,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
     setLoading(true);
 
     try {
-      await axios.put(`/management/user/${user.id}/job`, formData);
+      await api.put(`/management/user/${user.id}/job`, formData);
       alert('Job details updated successfully!');
       if (onUpdate) onUpdate();
       onClose();
@@ -75,7 +75,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
     setLoading(true);
 
     try {
-      await axios.put(`/management/user/${user.id}/transfer`, transferData);
+      await api.put(`/management/user/${user.id}/transfer`, transferData);
       alert('User transferred successfully!');
       if (onUpdate) onUpdate();
       onClose();
@@ -94,7 +94,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
     setLoading(true);
 
     try {
-      await axios.delete(`/management/user/${user.id}`);
+      await api.delete(`/management/user/${user.id}`);
       alert('User deleted successfully!');
       if (onUpdate) onUpdate();
       onClose();
