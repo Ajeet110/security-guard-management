@@ -16,10 +16,8 @@
     "seed": "node server/seedData.js",
     "credentials": "node server/showCredentials.js",
     "update-passwords": "node server/updatePasswords.js",
-    "init-db": "node server/initDb.js",
-    "start": "node server/initDb.js && node server/index.js",
+    "start": "node server/index.js",
     "heroku-postbuild": "cd client && npm install && npm run build",
-    "verify": "node verify-deployment-ready.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linting configured\" && exit 0"
   },
@@ -46,7 +44,6 @@
   "homepage": "https://github.com/YOUR_USERNAME/secureguard-connect#readme",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^9.2.2",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
