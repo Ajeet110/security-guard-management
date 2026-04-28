@@ -13,7 +13,7 @@ const ProfileViewer = ({ userId, onClose }) => {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/users/${userId}/profile`);
+      const response = await api.get(`/users/${userId}/profile`);
       // Client-side privacy filter (defense in depth)
       const filteredProfile = filterPrivateData(response.data);
       setProfile(filteredProfile);

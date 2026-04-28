@@ -257,7 +257,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, visiblePasswor
 
   const fetchDocuments = async () => {
     try {
-      const response = await axios.get(`${getBaseURL()}/api/documents/user/${user.id}`);
+      const response = await api.get(`/documents/user/${user.id}`);
       setDocuments(response.data);
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -276,7 +276,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, visiblePasswor
 
     setVerifying(docType);
     try {
-      await axios.post(`${getBaseURL()}/api/documents/verify/${doc.id}`, {});
+      await api.post(`/documents/verify/${doc.id}`, {});
       alert('Document verified successfully!');
       fetchDocuments();
     } catch (error) {
@@ -305,7 +305,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, visiblePasswor
     setRejecting(rejectDocType);
     try {
       console.log('Sending reject request for document ID:', doc.id);
-      await axios.post(`${getBaseURL()}/api/documents/reject/${doc.id}`, {
+      await api.post(`/documents/reject/${doc.id}`, {
         reason: rejectionReason
       });
       alert(`Document rejected and deleted. Reason: ${rejectionReason}`);
