@@ -105,7 +105,15 @@ router.post('/create', authenticateToken, (req, res) => {
     });
   } catch (error) {
     console.error('Create user error:', error);
-    res.status(500).json({ error: 'Failed to create user' });
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      error: 'Failed to create user',
+      details: error.message 
+    });
   }
 });
 
