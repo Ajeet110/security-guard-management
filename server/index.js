@@ -44,6 +44,12 @@ app.use(cookieParser());
 
 // Serve uploads directory
 const uploadsDir = process.env.UPLOADS_DIR || 'uploads';
+// Ensure uploads directory exists
+const fs = require('fs');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`📁 Created uploads directory: ${uploadsDir}`);
+}
 app.use('/uploads', express.static(path.resolve(uploadsDir)));
 
 // Make io available to routes

@@ -8,7 +8,20 @@ let db = null;
 const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'secureguard.db');
 
 const initDatabase = async () => {
-  const SQL = await initSqlJs();
+  try {
+    console.log('🔄 Initializing sql.js...');
+    
+    // Ensure database directory exists
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log(`📁 Created database directory: ${dbDir}`);
+    }
+    
+    // Initialize sql.js - let it use default WASM loading
+    const SQL = await initSqlJs();
+    
+    console.log('✅ sql.js initialized successfully');
   
   // Load existing database or create new one
   let buffer;
@@ -333,6 +346,11 @@ const initDatabase = async () => {
   saveDatabase();
 
   console.log('✅ Database initialized successfully');
+} catch (error) {
+  console.error('❌ Database initialization failed:', error);
+  console.error('Stack trace:', error.stack);
+  throw error;
+}
 };
 
 const saveDatabase = () => {
