@@ -85,11 +85,22 @@ app.get('/api/debug', (req, res) => {
     
     // Try to query users table
     const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    
+    // Try to get the owner user
+    const owner = db.prepare('SELECT id, user_id, name, role FROM users WHERE user_id = ?').get('2026');
+    
     res.json({ 
       status: 'ok', 
       message: 'Database is working',
       userCount: userCount.count,
-      dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db')
+      owner: owner,
+      dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db'),
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        JWT_SECRET_SET: !!process.env.JWT_SECRET,
+        JWT_REFRESH_SECRET_SET: !!process.env.JWT_REFRESH_SECRET,
+        CLIENT_URL: process.env.CLIENT_URL
+      }
     });
   } catch (error) {
     res.json({ 
