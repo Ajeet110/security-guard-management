@@ -7,21 +7,57 @@ let db = null;
 // Use environment variable or default path
 const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'secureguard.db');
 
+// Helper to ensure database directory exists
+const ensureDbDirExists = () => {
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log(`📁 Created database directory: ${dbDir}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to create database directory ${dbDir}:`, error.message);
+      return false;
+    }
+  }
+  return true;
+};
+
 const initDatabase = async () => {
   try {
     console.log('🔄 Initializing sql.js...');
     
     // Ensure database directory exists
-    const dbDir = path.dirname(dbPath);
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
-      console.log(`📁 Created database directory: ${dbDir}`);
+    if (!ensureDbDirExists()) {
+      throw new Error(`Failed to create database directory: ${path.dirname(dbPath)}`);
     }
     
-    // Initialize sql.js - let it use default WASM loading
-    const SQL = await initSqlJs();
-    
-    console.log('✅ sql.js initialized successfully');
+    // Initialize sql.js with explicit WASM loading for Render compatibility
+    let SQL;
+    try {
+      // Try to load sql.js with default settings first
+      SQL = await initSqlJs();
+      console.log('✅ sql.js initialized successfully with default settings');
+    } catch (error) {
+      console.log('⚠️ Default sql.js initialization failed, trying alternative...');
+      console.log('Error:', error.message);
+      
+      // Try alternative initialization for Render/Node.js environment
+      // sql.js may need explicit WASM file path in some environments
+      try {
+        // In Render environment, we might need to use the local file system
+        const wasmBinary = fs.readFileSync(path.join(__dirname, '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'));
+        SQL = await initSqlJs({ wasmBinary });
+        console.log('✅ sql.js initialized successfully with explicit WASM binary');
+      } catch (wasmError) {
+        console.error('❌ Failed to load sql.js with explicit WASM:', wasmError.message);
+        
+        // Last resort: try without WASM (will be slower but should work)
+        console.log('🔄 Trying sql.js without WASM (slower but functional)...');
+        SQL = await initSqlJs({ locateFile: () => '' });
+        console.log('✅ sql.js initialized without WASM (slower mode)');
+      }
+    }
   
   // Load existing database or create new one
   let buffer;

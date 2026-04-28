@@ -7,7 +7,7 @@ services:
     env: node
     region: singapore
     plan: free
-    buildCommand: npm run install-all && npm run build && node server/initDb.js
+    buildCommand: npm run install-all && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
@@ -20,19 +20,22 @@ services:
         value: 10000
       
       - key: JWT_SECRET
-        generateValue: true
+        value: your-super-secret-jwt-key-change-this-in-production-123456
         
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        value: your-refresh-secret-key-change-this-in-production-789012
       
       - key: CLIENT_URL
-        value: https://security-guard-management-ffxs.onrender.com
+        fromService:
+          type: web
+          name: secureguard-connect
+          property: url
         
       - key: DATABASE_URL
         value: /opt/render/project/src/server/database/secureguard.db
         
       - key: UPLOADS_DIR
-        value: ./uploads
+        value: /opt/render/project/src/uploads
 
     # Persistent disk for database and uploads
     disk:

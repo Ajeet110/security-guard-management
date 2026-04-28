@@ -69,17 +69,59 @@ socketHandler(io);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'SecureGuard Connect API is running' });
+  try {
+    const { db } = require('./database/db');
+    
+    if (!db) {
+      return res.status(503).json({ 
+        status: 'error', 
+        message: 'Database not initialized',
+        healthy: false
+      });
+    }
+    
+    // Simple query to verify database is working
+    try {
+      db.prepare('SELECT 1 as test').get();
+      res.json({ 
+        status: 'ok', 
+        message: 'SecureGuard Connect API is running',
+        healthy: true,
+        timestamp: new Date().toISOString()
+      });
+    } catch (dbError) {
+      res.status(503).json({ 
+        status: 'error', 
+        message: 'Database query failed',
+        error: dbError.message,
+        healthy: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error', 
+      message: 'Health check failed',
+      error: error.message,
+      healthy: false,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Debug endpoint to check database status
 app.get('/api/debug', (req, res) => {
   try {
+    const { db } = require('./database/db');
+    
     if (!db) {
       return res.json({ 
         status: 'error', 
         message: 'Database not initialized',
-        dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db')
+        dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db'),
+        timestamp: new Date().toISOString(),
+        nodeVersion: process.version,
+        platform: process.platform
       });
     }
     
@@ -89,17 +131,43 @@ app.get('/api/debug', (req, res) => {
     // Try to get the owner user
     const owner = db.prepare('SELECT id, user_id, name, role FROM users WHERE user_id = ?').get('2026');
     
+    // Check if we can create a user (test write operation)
+    const testUserId = Date.now().toString();
+    try {
+      const testResult = db.prepare(`
+        INSERT INTO users (user_id, password, display_password, name, role, created_by)
+        VALUES (?, ?, ?, ?, ?, NULL)
+      `).run(testUserId, 'test_hash', 'test123', 'Test User', 'Guard');
+      
+      // Delete the test user
+      db.prepare('DELETE FROM users WHERE user_id = ?').run(testUserId);
+      
+      var writeTest = { success: true, testUserId };
+    } catch (writeError) {
+      var writeTest = { success: false, error: writeError.message };
+    }
+    
     res.json({ 
       status: 'ok', 
       message: 'Database is working',
       userCount: userCount.count,
       owner: owner,
+      writeTest,
       dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db'),
       env: {
         NODE_ENV: process.env.NODE_ENV,
         JWT_SECRET_SET: !!process.env.JWT_SECRET,
         JWT_REFRESH_SECRET_SET: !!process.env.JWT_REFRESH_SECRET,
-        CLIENT_URL: process.env.CLIENT_URL
+        CLIENT_URL: process.env.CLIENT_URL,
+        DATABASE_URL: process.env.DATABASE_URL,
+        UPLOADS_DIR: process.env.UPLOADS_DIR
+      },
+      system: {
+        timestamp: new Date().toISOString(),
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        memory: process.memoryUsage()
       }
     });
   } catch (error) {
@@ -107,7 +175,10 @@ app.get('/api/debug', (req, res) => {
       status: 'error', 
       message: error.message,
       stack: error.stack,
-      dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db')
+      dbPath: process.env.DATABASE_URL || path.join(__dirname, 'database/secureguard.db'),
+      timestamp: new Date().toISOString(),
+      nodeVersion: process.version,
+      platform: process.platform
     });
   }
 });

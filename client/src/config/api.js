@@ -8,12 +8,20 @@ export const getBaseURL = () => {
     return process.env.REACT_APP_API_URL;
   }
   
-  // In production (or when running from a non-localhost domain), use same origin
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  // Check if we're running in browser
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If hostname is localhost or 127.0.0.1, use localhost:5000
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+    
+    // Otherwise use the same origin (for Render, Vercel, etc.)
     return window.location.origin;
   }
   
-  // In development, use localhost
+  // Fallback for SSR or build time
   return 'http://localhost:5000';
 };
 
@@ -54,5 +62,14 @@ export const apiConfig = {
   timeout: 30000, // 30 seconds
   withCredentials: true
 };
+
+// Debug logging in development
+if (typeof window !== 'undefined') {
+  console.log('🔧 API Config:', {
+    hostname: window.location.hostname,
+    baseURL: apiConfig.baseURL,
+    apiURL: apiConfig.apiURL
+  });
+}
 
 export default apiConfig;
