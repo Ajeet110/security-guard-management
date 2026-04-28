@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
-const db = require('./database/db');
+const { db, initDatabase } = require('./database/db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const chatRoutes = require('./routes/chat');
@@ -26,27 +26,25 @@ const io = socketIo(server, {
 });
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
+    // Allow requests with no origin (mobile apps, curl, etc.) or matching origin
+    if (!origin || origin === allowedOrigin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
 // Serve uploads directory
 const uploadsDir = process.env.UPLOADS_DIR || 'uploads';
 app.use('/uploads', express.static(path.resolve(uploadsDir)));
-
-// Initialize database
-db.initDatabase();
-
-// Start attendance scheduler
-try {
-  require('./scheduler');
-  console.log('⏰ Attendance scheduler started');
-} catch (error) {
-  console.error('❌ Failed to start scheduler:', error.message);
-}
 
 // Make io available to routes
 app.set('io', io);
@@ -78,9 +76,24 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📁 Uploads directory: ${uploadsDir}`);
-  console.log(`🌐 CORS origin: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
-  console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
+
+// Initialize database FIRST, then start server
+initDatabase().then(() => {
+  // Start attendance scheduler after DB is ready
+  try {
+    require('./scheduler');
+    console.log('⏰ Attendance scheduler started');
+  } catch (error) {
+    console.error('❌ Failed to start scheduler:', error.message);
+  }
+
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📁 Uploads directory: ${uploadsDir}`);
+    console.log(`🌐 CORS origin: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
+    console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}).catch((err) => {
+  console.error('❌ Failed to initialize database:', err);
+  process.exit(1);
 });

@@ -344,6 +344,9 @@ const saveDatabase = () => {
 
 // Wrapper functions to match better-sqlite3 API
 const prepare = (sql) => {
+  if (!db) {
+    throw new Error('Database not initialized yet. Ensure initDatabase() has completed before making queries.');
+  }
   return {
     run: (...params) => {
       try {
