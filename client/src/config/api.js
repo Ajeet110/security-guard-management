@@ -1,9 +1,6 @@
 // API Configuration for different environments
 // This ensures proper URL handling in development and production
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
-
 // Get the base URL based on environment
 export const getBaseURL = () => {
   // If REACT_APP_API_URL is set, use it (for custom deployments)
@@ -11,8 +8,8 @@ export const getBaseURL = () => {
     return process.env.REACT_APP_API_URL;
   }
   
-  // In production, use relative URLs (same domain)
-  if (isProduction) {
+  // In production (or when running from a non-localhost domain), use same origin
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
     return window.location.origin;
   }
   
