@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { useAuth, api } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import Avatar from './Avatar';
