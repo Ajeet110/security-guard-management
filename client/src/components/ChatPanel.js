@@ -5,7 +5,7 @@ import Avatar from './Avatar';
 import GroupInfoPanel from './GroupInfoPanel';
 import ProfileViewer from './ProfileViewer';
 
-const ChatPanel = () => {
+const ChatPanel = ({ isMobile = false }) => {
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -64,6 +64,18 @@ const ChatPanel = () => {
       window.removeEventListener('openChat', handleOpenChat);
     };
   }, [conversations]);
+
+  useEffect(() => {
+    const handleUserDataUpdated = () => {
+      loadConversations();
+      loadAllUsers();
+      if (activeChat) {
+        loadMessages(activeChat.id);
+      }
+    };
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    return () => window.removeEventListener('userDataUpdated', handleUserDataUpdated);
+  }, [activeChat]);
 
   useEffect(() => {
     if (activeChat) {
@@ -432,13 +444,13 @@ const ChatPanel = () => {
 
   return (
     <div style={{
-      width: '380px',
-      minWidth: '380px',
+      width: isMobile ? '100%' : '380px',
+      minWidth: isMobile ? '100%' : '380px',
       background: 'var(--bg2)',
-      borderLeft: '1px solid var(--bd)',
+      borderLeft: isMobile ? 'none' : '1px solid var(--bd)',
       display: 'flex',
       flexDirection: 'column',
-      height: '100vh'
+      height: isMobile ? '100%' : '100vh'
     }}>
       {!activeChat ? (
         // Conversations List

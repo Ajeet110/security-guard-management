@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import Avatar from '../components/Avatar';
 import UserManagementModal from '../components/UserManagementModal';
@@ -12,6 +11,7 @@ import { getBaseURL } from '../config/api';
 
 const OwnerDashboard = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState({
     managers: 0,
     supervisors: 0,
@@ -34,6 +34,14 @@ const OwnerDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const handleUserDataUpdated = () => {
+      fetchDashboardData();
+    };
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    return () => window.removeEventListener('userDataUpdated', handleUserDataUpdated);
   }, []);
 
   // Listen for chat open requests
@@ -85,10 +93,19 @@ const OwnerDashboard = () => {
     }));
   };
 
-  return (
-    <DashboardLayout onAddUser={() => setShowAddUser(true)}>
+  // Check if mobile view
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const renderDashboard = () => (
+    <>
       {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>
             Owner Dashboard
@@ -97,38 +114,40 @@ const OwnerDashboard = () => {
             Complete overview of your security operations
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn-s"
-            onClick={() => setShowSettings(true)}
-            style={{ color: 'var(--blu)', borderColor: 'rgba(33, 150, 243, 0.3)' }}
-          >
-            <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
-            Settings
-          </button>
-          <button
-            className="btn-s"
-            onClick={() => setShowGroupManagement(true)}
-            style={{ color: 'var(--tl)', borderColor: 'rgba(0, 188, 212, 0.3)' }}
-          >
-            <i className="fa-solid fa-users" style={{ marginRight: '6px' }}></i>
-            Manage Groups
-          </button>
-          <button
-            className="btn-s"
-            onClick={() => setShowAttendanceReport(true)}
-            style={{ color: 'var(--grn)', borderColor: 'rgba(0, 200, 83, 0.3)' }}
-          >
-            <i className="fa-solid fa-chart-line" style={{ marginRight: '6px' }}></i>
-            Attendance Report
-          </button>
-        </div>
+        {!isMobile && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              className="btn-s"
+              onClick={() => setShowSettings(true)}
+              style={{ color: 'var(--blu)', borderColor: 'rgba(33, 150, 243, 0.3)' }}
+            >
+              <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
+              Settings
+            </button>
+            <button
+              className="btn-s"
+              onClick={() => setShowGroupManagement(true)}
+              style={{ color: 'var(--tl)', borderColor: 'rgba(0, 188, 212, 0.3)' }}
+            >
+              <i className="fa-solid fa-users" style={{ marginRight: '6px' }}></i>
+              Manage Groups
+            </button>
+            <button
+              className="btn-s"
+              onClick={() => setShowAttendanceReport(true)}
+              style={{ color: 'var(--grn)', borderColor: 'rgba(0, 200, 83, 0.3)' }}
+            >
+              <i className="fa-solid fa-chart-line" style={{ marginRight: '6px' }}></i>
+              Attendance Report
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards with Add User Options */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
         gap: '16px',
         marginBottom: '28px'
       }}>
@@ -136,7 +155,29 @@ const OwnerDashboard = () => {
           className="stat"
           onClick={() => openUserList('Manager')}
         >
-          <div className="lbl">Total Managers</div>
+          <div className="lbl">
+            <span>Total Managers</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Manager');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
+          </div>
           <div className="num" style={{ color: 'var(--blu)' }}>{stats.managers}</div>
           <i className="fa-solid fa-briefcase ico" style={{ color: 'var(--blu)' }}></i>
         </div>
@@ -145,7 +186,29 @@ const OwnerDashboard = () => {
           className="stat"
           onClick={() => openUserList('Supervisor')}
         >
-          <div className="lbl">Total Supervisors</div>
+          <div className="lbl">
+            <span>Total Supervisors</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Supervisor');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(245, 158, 11, 0.2)',
+                borderColor: 'rgba(245, 158, 11, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
+          </div>
           <div className="num" style={{ color: 'var(--ylw)' }}>{stats.supervisors}</div>
           <i className="fa-solid fa-hard-hat ico" style={{ color: 'var(--ylw)' }}></i>
         </div>
@@ -154,7 +217,29 @@ const OwnerDashboard = () => {
           className="stat"
           onClick={() => openUserList('Guard')}
         >
-          <div className="lbl">Total Guards</div>
+          <div className="lbl">
+            <span>Total Guards</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Guard');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(16, 185, 129, 0.2)',
+                borderColor: 'rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
+          </div>
           <div className="num" style={{ color: 'var(--grn)' }}>{stats.guards}</div>
           <i className="fa-solid fa-shield ico" style={{ color: 'var(--grn)' }}></i>
         </div>
@@ -168,12 +253,80 @@ const OwnerDashboard = () => {
 
       {/* Attendance Dashboard */}
       <AttendanceDashboard userRole="Owner" userId={user.id} />
+    </>
+  );
+
+  return (
+    <DashboardLayout onAddUser={() => setShowAddUser(true)}>
+      {isMobile ? (
+        <>
+          {/* Mobile View with Tabs */}
+          <div style={{ paddingBottom: isMobile ? '70px' : '0' }}>
+            {activeTab === 'dashboard' && renderDashboard()}
+            {activeTab === 'groups' && (
+              <div style={{ padding: '20px' }}>
+                <h3 style={{ marginBottom: '16px' }}>Group Management</h3>
+                <button
+                  className="btn-p"
+                  onClick={() => setShowGroupManagement(true)}
+                  style={{ width: '100%' }}
+                >
+                  <i className="fa-solid fa-users" style={{ marginRight: '8px' }}></i>
+                  Manage Groups
+                </button>
+              </div>
+            )}
+            {activeTab === 'reports' && (
+              <div style={{ padding: '20px' }}>
+                <h3 style={{ marginBottom: '16px' }}>Reports</h3>
+                <button
+                  className="btn-p"
+                  onClick={() => setShowAttendanceReport(true)}
+                  style={{ width: '100%' }}
+                >
+                  <i className="fa-solid fa-chart-line" style={{ marginRight: '8px' }}></i>
+                  Attendance Report
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Bottom Navigation */}
+          <div className="bottom-nav">
+            <div 
+              className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <i className="fa-solid fa-chart-line"></i>
+              <span>Dashboard</span>
+            </div>
+            <div 
+              className={`nav-btn ${activeTab === 'groups' ? 'active' : ''}`}
+              onClick={() => setActiveTab('groups')}
+            >
+              <i className="fa-solid fa-users"></i>
+              <span>Groups</span>
+            </div>
+            <div 
+              className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              <i className="fa-solid fa-file-alt"></i>
+              <span>Reports</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        renderDashboard()
+      )}
 
       {/* Modals */}
       {showAddUser && (
         <AddUserModal 
+          selectedRole={selectedRole}
           onClose={() => {
             setShowAddUser(false);
+            setSelectedRole(null);
             fetchDashboardData();
           }}
         />
@@ -231,20 +384,60 @@ const OwnerDashboard = () => {
         />
       )}
 
+
+
       {showSettings && (
         <SettingsModal
           isOpen={showSettings}
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      {/* Floating Contact Developer Button */}
+      <a
+        href="https://www.instagram.com/ajeet_up82?igsh=cGNyejJldWN3M3V5"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 600,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          cursor: 'pointer',
+          zIndex: 9999,
+          textDecoration: 'none',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          whiteSpace: 'nowrap'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        }}
+        title="Contact Developer on Instagram"
+      >
+        Contact Developer
+      </a>
     </DashboardLayout>
   );
 };
 
 // Add User Modal Component
-const AddUserModal = ({ onClose }) => {
+const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
   const [formData, setFormData] = useState({
-    role: '',
+    role: propSelectedRole || '',
     name: '',
     mobile: '',
     location: '',
@@ -257,14 +450,18 @@ const AddUserModal = ({ onClose }) => {
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchParentOptions();
-  }, []);
-
-  useEffect(() => {
-    if (formData.role) {
-      generatePreview();
-    }
+  // Define generatePreview BEFORE useEffect hooks
+  const generatePreview = useCallback(() => {
+    const now = new Date();
+    const id = now.toISOString().replace(/[-:T]/g, '').slice(0, 12);
+    setPreviewId(id);
+    
+    const pwMap = {
+      Manager: `Mgr@${id.slice(-4)}`,
+      Supervisor: `Sup@${id.slice(-4)}`,
+      Guard: `Grd@${id.slice(-4)}`
+    };
+    setPreviewPw(pwMap[formData.role] || '--');
   }, [formData.role]);
 
   const fetchParentOptions = async () => {
@@ -277,18 +474,18 @@ const AddUserModal = ({ onClose }) => {
     }
   };
 
-  const generatePreview = () => {
-    const now = new Date();
-    const id = now.toISOString().replace(/[-:T]/g, '').slice(0, 12);
-    setPreviewId(id);
-    
-    const pwMap = {
-      Manager: `Mgr@${id.slice(-4)}`,
-      Supervisor: `Sup@${id.slice(-4)}`,
-      Guard: `Grd@${id.slice(-4)}`
-    };
-    setPreviewPw(pwMap[formData.role] || '--');
-  };
+  useEffect(() => {
+    fetchParentOptions();
+    if (propSelectedRole) {
+      generatePreview();
+    }
+  }, [propSelectedRole, generatePreview]);
+
+  useEffect(() => {
+    if (formData.role) {
+      generatePreview();
+    }
+  }, [formData.role, generatePreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -296,6 +493,7 @@ const AddUserModal = ({ onClose }) => {
 
     try {
       await api.post('/users/create', formData);
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
       alert(`User ${formData.name} created successfully with ID: ${previewId}`);
       onClose();
     } catch (error) {

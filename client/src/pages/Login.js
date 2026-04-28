@@ -33,7 +33,7 @@ const Login = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #040d16, #0a1929 40%, #0d2818 70%, #071520)',
+      background: 'linear-gradient(135deg, var(--bg1), var(--bg2) 40%, var(--bg3) 70%, var(--card))',
       position: 'relative',
       overflow: 'hidden'
     }}>
@@ -83,7 +83,7 @@ const Login = () => {
           margin: '0 auto 16px',
           boxShadow: '0 8px 30px rgba(0, 200, 83, 0.3)'
         }}>
-          <i className="fa-solid fa-shield-halved" style={{ fontSize: '26px', color: '#fff' }}></i>
+          <i className="fa-solid fa-shield-halved" style={{ fontSize: '26px', color: 'var(--t1)' }}></i>
         </div>
 
         <h1 style={{ fontSize: '22px', textAlign: 'center', marginBottom: '4px', color: 'var(--t1)' }}>

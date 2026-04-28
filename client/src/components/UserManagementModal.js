@@ -51,6 +51,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
     try {
       await api.put(`/management/user/${user.id}/job`, formData);
       alert('Job details updated successfully!');
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
       if (onUpdate) onUpdate();
       onClose();
     } catch (error) {
@@ -77,6 +78,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
     try {
       await api.put(`/management/user/${user.id}/transfer`, transferData);
       alert('User transferred successfully!');
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
       if (onUpdate) onUpdate();
       onClose();
     } catch (error) {
@@ -96,6 +98,7 @@ const UserManagementModal = ({ user, onClose, onUpdate }) => {
     try {
       await api.delete(`/management/user/${user.id}`);
       alert('User deleted successfully!');
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
       if (onUpdate) onUpdate();
       onClose();
     } catch (error) {

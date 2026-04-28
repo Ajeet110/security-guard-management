@@ -9,10 +9,14 @@ import AttendanceDashboard from '../components/AttendanceDashboard';
 
 const SupervisorDashboard = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [myGuards, setMyGuards] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState({ present: 0, total: 0 });
+  const [showAddUser, setShowAddUser] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
   const [showManagement, setShowManagement] = useState(false);
   const [managementUser, setManagementUser] = useState(null);
   const [chatConversationId, setChatConversationId] = useState(null);
@@ -21,6 +25,21 @@ const SupervisorDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const handleUserDataUpdated = () => {
+      fetchDashboardData();
+    };
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    return () => window.removeEventListener('userDataUpdated', handleUserDataUpdated);
+  }, []);
+
+  // Mobile resize listener
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Listen for chat open requests
@@ -34,7 +53,7 @@ const SupervisorDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       // Fetch all users
-      const usersRes = await api.get('/"users/hierarchy');
+      const usersRes = await api.get('/users/hierarchy');
       const users = usersRes.data;
 
       // Get guards under this supervisor
@@ -79,10 +98,10 @@ const SupervisorDashboard = () => {
     }));
   };
 
-  return (
-    <DashboardLayout onAddUser={() => {}}>
+  const renderDashboard = () => (
+    <>
       {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>
             Supervisor Dashboard
@@ -91,31 +110,77 @@ const SupervisorDashboard = () => {
             {user.location || 'Assigned Area'}
           </p>
         </div>
-        <button
-          className="btn-s"
-          onClick={() => setShowSettings(true)}
-          style={{ color: 'var(--blu)', borderColor: 'rgba(33, 150, 243, 0.3)' }}
-        >
-          <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
-          Settings
-        </button>
+        {!isMobile && (
+          <button
+            className="btn-s"
+            onClick={() => setShowSettings(true)}
+            style={{ color: 'var(--blu)', borderColor: 'rgba(33, 150, 243, 0.3)' }}
+          >
+            <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
+            Settings
+          </button>
+        )}
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards with Add User Options */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
         gap: '16px',
         marginBottom: '28px'
       }}>
         <div className="stat">
-          <div className="lbl">Active Patrols</div>
+          <div className="lbl">
+            <span>Active Patrols</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Add patrol functionality
+                alert('Add patrol feature coming soon!');
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(6, 182, 212, 0.2)',
+                borderColor: 'rgba(6, 182, 212, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
+          </div>
           <div className="num" style={{ color: 'var(--tl)' }}>7</div>
           <i className="fa-solid fa-route ico" style={{ color: 'var(--tl)' }}></i>
         </div>
 
         <div className="stat">
-          <div className="lbl">Guard Attendance (Today)</div>
+          <div className="lbl">
+            <span>Guard Attendance (Today)</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Guard');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(16, 185, 129, 0.2)',
+                borderColor: 'rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
+          </div>
           <div className="num" style={{ fontSize: '28px' }}>
             <span style={{ color: 'var(--grn)' }}>{attendanceStats.present}</span>
             <span style={{ color: 'var(--t3)', fontSize: '18px' }}>/{attendanceStats.total}</span>
@@ -132,7 +197,29 @@ const SupervisorDashboard = () => {
         </div>
 
         <div className="stat">
-          <div className="lbl">Recent Incidents</div>
+          <div className="lbl">
+            <span>Recent Incidents</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Add incident functionality
+                alert('Add incident feature coming soon!');
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(239, 68, 68, 0.2)',
+                borderColor: 'rgba(239, 68, 68, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
+          </div>
           <div className="num" style={{ color: 'var(--red)' }}>2</div>
           <i className="fa-solid fa-triangle-exclamation ico" style={{ color: 'var(--red)' }}></i>
         </div>
@@ -212,8 +299,128 @@ const SupervisorDashboard = () => {
           </tbody>
         </table>
       </div>
+    </>
+  );
+
+  return (
+    <DashboardLayout onAddUser={() => {}}>
+      {isMobile ? (
+        <>
+          <div style={{ paddingBottom: '70px' }}>
+            {activeTab === 'dashboard' && renderDashboard()}
+            {activeTab === 'guards' && (
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3>My Guards</h3>
+                  <button
+                    className="btn-p"
+                    onClick={() => {
+                      setSelectedRole('Guard');
+                      setShowAddUser(true);
+                    }}
+                    style={{ 
+                      padding: '8px 16px',
+                      background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
+                      border: 'none'
+                    }}
+                  >
+                    <i className="fa-solid fa-plus" style={{ marginRight: '6px' }}></i>
+                    Add Guard
+                  </button>
+                </div>
+                <div style={{ fontSize: '14px', color: 'var(--t2)', marginBottom: '20px' }}>
+                  Manage guards under your supervision
+                </div>
+                {myGuards.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {myGuards.map(guard => (
+                      <div 
+                        key={guard.id}
+                        onClick={() => openProfile(guard)}
+                        style={{
+                          background: 'var(--card)',
+                          border: '1px solid var(--bd)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                          <Avatar user={guard} size="md" online={guard.is_online} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '14px', fontWeight: 600 }}>{guard.name}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--t3)', fontFamily: 'monospace' }}>
+                              {guard.user_id}
+                            </div>
+                          </div>
+                          <span className={`badge ${guard.is_online ? 'badge-g' : 'badge-r'}`}>
+                            {guard.is_online ? 'Online' : 'Offline'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--t2)' }}>
+                          Location: {guard.location || 'Not assigned'} • Shift: {guard.shift || 'Day 6AM-2PM'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'var(--t3)', padding: '40px 20px' }}>
+                    No guards assigned yet
+                  </div>
+                )}
+              </div>
+            )}
+            {activeTab === 'reports' && (
+              <div style={{ padding: '20px' }}>
+                <h3 style={{ marginBottom: '16px' }}>Reports & Analytics</h3>
+                <div style={{ fontSize: '14px', color: 'var(--t2)' }}>
+                  View attendance reports and guard analytics
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Bottom Navigation */}
+          <div className="bottom-nav">
+            <div 
+              className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <i className="fa-solid fa-chart-line"></i>
+              <span>Dashboard</span>
+            </div>
+            <div 
+              className={`nav-btn ${activeTab === 'guards' ? 'active' : ''}`}
+              onClick={() => setActiveTab('guards')}
+            >
+              <i className="fa-solid fa-shield"></i>
+              <span>Guards</span>
+            </div>
+            <div 
+              className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              <i className="fa-solid fa-file-alt"></i>
+              <span>Reports</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        renderDashboard()
+      )}
 
       {/* Modals */}
+      {showAddUser && (
+        <AddUserModal 
+          selectedRole={selectedRole}
+          onClose={() => {
+            setShowAddUser(false);
+            setSelectedRole(null);
+            fetchDashboardData();
+          }}
+        />
+      )}
+
       {showProfile && selectedUser && (
         <ProfileModal
           user={selectedUser}
@@ -343,7 +550,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
   const handleStartChat = async () => {
     setStartingChat(true);
     try {
-      const response = await api.post('/"chat/conversation/personal', 
+      const response = await api.post('/chat/conversation/personal', 
         { user_id: user.id });
       
       onClose();
@@ -671,6 +878,241 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Add User Modal Component for SupervisorDashboard
+const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
+  const [formData, setFormData] = useState({
+    role: propSelectedRole || '',
+    name: '',
+    mobile: '',
+    location: '',
+    shift: '',
+    parent_id: ''
+  });
+  const [previewId, setPreviewId] = useState('Select role to generate');
+  const [previewPw, setPreviewPw] = useState('--');
+  const [managers, setManagers] = useState([]);
+  const [supervisors, setSupervisors] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Define functions BEFORE useEffect hooks
+  const fetchParentOptions = async () => {
+    try {
+      const res = await api.get('/users/hierarchy');
+      setManagers(res.data.filter(u => u.role === 'Manager'));
+      setSupervisors(res.data.filter(u => u.role === 'Supervisor'));
+    } catch (error) {
+      console.error('Error fetching parent options:', error);
+    }
+  };
+
+  const generatePreview = () => {
+    const now = new Date();
+    const id = now.toISOString().replace(/[-:T]/g, '').slice(0, 12);
+    setPreviewId(id);
+    
+    const pwMap = {
+      Manager: `Mgr@${id.slice(-4)}`,
+      Supervisor: `Sup@${id.slice(-4)}`,
+      Guard: `Grd@${id.slice(-4)}`
+    };
+    setPreviewPw(pwMap[formData.role] || '--');
+  };
+
+  useEffect(() => {
+    fetchParentOptions();
+    if (propSelectedRole) {
+      generatePreview();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (formData.role) {
+      generatePreview();
+    }
+  }, [formData.role]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await api.post('/users/create', formData);
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
+      alert(`User ${formData.name} created successfully with ID: ${previewId}`);
+      onClose();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-bg" onClick={(e) => e.target.className === 'modal-bg' && onClose()}>
+      <div className="modal">
+        <div className="modal-head">
+          <h3>Add New User</h3>
+          <button className="modal-close" onClick={onClose}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            {/* Role Selection */}
+            <div style={{ marginBottom: '16px' }}>
+              <label className="flbl">Select Role</label>
+              <select 
+                className="fselect"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                required
+              >
+                <option value="">Choose role...</option>
+                <option value="Guard">Guard</option>
+              </select>
+            </div>
+
+            {/* Parent Selection */}
+            {formData.role === 'Guard' && (
+              <div style={{ marginBottom: '16px' }}>
+                <label className="flbl">Assign to Supervisor</label>
+                <select 
+                  className="fselect"
+                  value={formData.parent_id}
+                  onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
+                  required
+                >
+                  <option value="">Choose supervisor...</option>
+                  {supervisors.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.user_id}) - Supervisor</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Name */}
+            <div style={{ marginBottom: '16px' }}>
+              <label className="flbl">Full Name</label>
+              <input
+                type="text"
+                className="finput"
+                placeholder="Enter full name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+
+            {/* Phone */}
+            <div style={{ marginBottom: '16px' }}>
+              <label className="flbl">Phone Number</label>
+              <input
+                type="tel"
+                className="finput"
+                placeholder="10-digit mobile"
+                value={formData.mobile}
+                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+              />
+            </div>
+
+            {/* Location */}
+            <div style={{ marginBottom: '16px' }}>
+              <label className="flbl">Location / Post</label>
+              <input
+                type="text"
+                className="finput"
+                placeholder="e.g. Gate A"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              />
+            </div>
+
+            {/* Shift */}
+            <div style={{ marginBottom: '20px' }}>
+              <label className="flbl">Shift</label>
+              <input
+                type="text"
+                className="finput"
+                placeholder="e.g. Day 6AM-2PM, Night 10PM-6AM"
+                value={formData.shift}
+                onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+              />
+              <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '4px' }}>
+                Enter custom shift timing
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: '10px',
+              padding: '14px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ fontSize: '11px', color: 'var(--t3)', marginBottom: '4px' }}>
+                Auto-Generated ID
+              </div>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 700,
+                color: 'var(--grn)',
+                fontFamily: 'monospace'
+              }}>
+                {previewId}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '4px' }}>
+                Default Password: <span style={{ color: 'var(--t2)' }}>{previewPw}</span>
+              </div>
+            </div>
+
+            <button type="submit" className="btn-p" disabled={loading}>
+              {loading ? 'Creating...' : 'Create User'}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Floating Contact Developer Button */}
+      <a
+        href="https://www.instagram.com/ajeet_up82?igsh=cGNyejJldWN3M3V5"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 600,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          cursor: 'pointer',
+          zIndex: 9999,
+          textDecoration: 'none',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          whiteSpace: 'nowrap'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        }}
+        title="Contact Developer on Instagram"
+      >
+        Contact Developer
+      </a>
     </div>
   );
 };

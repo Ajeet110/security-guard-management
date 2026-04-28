@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, api } from '../context/AuthContext';
 import Avatar from './Avatar';
 import HierarchyTree from './HierarchyTree';
@@ -7,33 +7,94 @@ import SettingsModal from './SettingsModal';
 
 const DashboardLayout = ({ children, onAddUser }) => {
   const { user, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
   const [showCredentials, setShowCredentials] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const [selectedUserForChat, setSelectedUserForChat] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 860);
+  const [mobileTab, setMobileTab] = useState('dashboard');
 
-  const handleSearch = async (query) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    
-    setSearching(true);
-    try {
-      const response = await api.get(`/users/search?query=${encodeURIComponent(query)}`);
-      setSearchResults(response.data);
-    } catch (error) {
-      console.error('Search error:', error);
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
-  };
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 860);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="pwa">
+        <div className="pwa-head">
+          <Avatar user={user} size="md" online={true} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.name}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--t3)' }}>
+              {user.role} · {user.user_id}
+            </div>
+          </div>
+          <button
+            onClick={() => setShowSettings(true)}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '18px', cursor: 'pointer', marginRight: '8px' }}
+            title="Settings"
+          >
+            <i className="fa-solid fa-gear"></i>
+          </button>
+          <button
+            onClick={logout}
+            style={{ background: 'none', border: 'none', color: 'var(--t3)', fontSize: '18px', cursor: 'pointer' }}
+            title="Logout"
+          >
+            <i className="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <div className="pwa-body">
+          {mobileTab === 'hierarchy' && (
+            <div style={{ padding: '12px 8px' }}>
+              <div style={{ padding: '0 8px 8px', fontSize: '11px', fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                Hierarchy
+              </div>
+              <div style={{ maxHeight: 'calc(100vh - 230px)', overflowY: 'auto', padding: '0 4px' }}>
+                <HierarchyTree userId={user.role === 'Owner' ? '2026' : user.user_id} />
+              </div>
+              {onAddUser && (
+                <div style={{ padding: '12px 8px 6px' }}>
+                  <button className="btn-p" onClick={onAddUser} style={{ fontSize: '13px', padding: '11px 20px' }}>
+                    <i className="fa-solid fa-user-plus" style={{ marginRight: '6px' }}></i>
+                    Add New User
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {mobileTab === 'dashboard' && <div>{children}</div>}
+          {mobileTab === 'messages' && <ChatPanel isMobile={true} />}
+        </div>
+
+        <div className="bottom-nav">
+          <div className={`nav-btn ${mobileTab === 'hierarchy' ? 'active' : ''}`} onClick={() => setMobileTab('hierarchy')}>
+            <i className="fa-solid fa-sitemap"></i>
+            <span>Hierarchy</span>
+          </div>
+          <div className={`nav-btn ${mobileTab === 'dashboard' ? 'active' : ''}`} onClick={() => setMobileTab('dashboard')}>
+            <i className="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+          </div>
+          <div className={`nav-btn ${mobileTab === 'messages' ? 'active' : ''}`} onClick={() => setMobileTab('messages')}>
+            <i className="fa-solid fa-comments"></i>
+            <span>Messages</span>
+          </div>
+        </div>
+
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="dash" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -207,11 +268,7 @@ const DashboardLayout = ({ children, onAddUser }) => {
       {/* Search Users Modal */}
       {showSearch && (
         <SearchUsersModal
-          onClose={() => {
-            setShowSearch(false);
-            setSearchQuery('');
-            setSearchResults([]);
-          }}
+          onClose={() => setShowSearch(false)}
         />
       )}
 

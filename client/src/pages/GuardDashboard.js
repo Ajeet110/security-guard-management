@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth, api } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import Avatar from '../components/Avatar';
 import SettingsModal from '../components/SettingsModal';
 import { formatTime, formatDate } from '../utils/helpers';
 import { getFileURL } from '../config/api';
 
 const GuardDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, checkAuth } = useAuth();
+  const { socket, connected } = useSocket();
   const [activeTab, setActiveTab] = useState('home');
   const [attendance, setAttendance] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -36,6 +38,33 @@ const GuardDashboard = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRefs = useRef({});
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // Get greeting based on Indian time
+  const getGreeting = () => {
+    const now = new Date();
+    // Convert to Indian timezone (IST = UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istTime = new Date(now.getTime() + istOffset);
+    const hours = istTime.getUTCHours();
+    
+    if (hours >= 5 && hours < 12) {
+      return '🌅 Good Morning';
+    } else if (hours >= 12 && hours < 17) {
+      return '☀️ Good Afternoon';
+    } else if (hours >= 17 && hours < 21) {
+      return '🌆 Good Evening';
+    } else {
+      return '🌙 Good Night';
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'attendance' || activeTab === 'home') {
@@ -62,6 +91,96 @@ const GuardDashboard = () => {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const handleUserDataUpdated = async () => {
+      await checkAuth();
+      fetchAttendance();
+      fetchConversations();
+      fetchAllUsers();
+      if (activeTab === 'profile') {
+        fetchDocuments();
+      }
+    };
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    return () => window.removeEventListener('userDataUpdated', handleUserDataUpdated);
+  }, [activeTab]);
+
+  // Socket.IO event listeners for real-time updates
+  useEffect(() => {
+    if (!socket || !connected) return;
+
+    // Listen for new messages
+    socket.on('new_message', (message) => {
+      console.log('📨 New message received:', message);
+      
+      // If we're in chat tab and this message is for active chat, update messages
+      if (activeTab === 'chat' && activeChat && message.conversation_id === activeChat.id) {
+        setMessages(prev => [...prev, message]);
+        
+        // Mark as read immediately if chat is open
+        setTimeout(() => {
+          api.post('/chat/messages/read', {
+            conversation_id: activeChat.id,
+            message_ids: [message.id]
+          }).catch(console.error);
+        }, 100);
+      }
+      
+      // Always refresh conversations to update unread counts
+      fetchConversations();
+    });
+
+    // Listen for message updates (edited, deleted, etc.)
+    socket.on('message_updated', (updatedMessage) => {
+      console.log('📝 Message updated:', updatedMessage);
+      
+      if (activeTab === 'chat' && activeChat && updatedMessage.conversation_id === activeChat.id) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === updatedMessage.id ? updatedMessage : msg
+        ));
+      }
+      
+      // Refresh conversations
+      fetchConversations();
+    });
+
+    // Listen for conversation updates
+    socket.on('conversation_updated', (conversation) => {
+      console.log('💬 Conversation updated:', conversation);
+      fetchConversations();
+    });
+
+    // Listen for user status changes
+    socket.on('user_status_changed', (data) => {
+      console.log('👤 User status changed:', data);
+      fetchConversations();
+      fetchAllUsers();
+    });
+
+    // Cleanup listeners
+    return () => {
+      socket.off('new_message');
+      socket.off('message_updated');
+      socket.off('conversation_updated');
+      socket.off('user_status_changed');
+    };
+  }, [socket, connected, activeTab, activeChat]);
+
+  // Auto-refresh messages when in chat tab with active chat
+  useEffect(() => {
+    if (activeTab === 'chat' && activeChat) {
+      // Initial load
+      fetchMessages(activeChat.id);
+      
+      // Refresh every 5 seconds as backup (in case socket fails)
+      const interval = setInterval(() => {
+        fetchMessages(activeChat.id);
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, activeChat]);
 
   // Refresh attendance data when month changes
   useEffect(() => {
@@ -267,8 +386,24 @@ const GuardDashboard = () => {
     try {
       const res = await api.get(`/chat/messages/${conversationId}`);
       setMessages(res.data);
+      
+      // Mark messages as read when fetching
+      markMessagesAsRead(conversationId);
     } catch (error) {
       console.error('Error fetching messages:', error);
+    }
+  };
+
+  const markMessagesAsRead = async (conversationId) => {
+    try {
+      await api.post('/chat/messages/read', {
+        conversation_id: conversationId
+      });
+      
+      // Refresh conversations to update unread counts
+      fetchConversations();
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
     }
   };
 
@@ -283,7 +418,7 @@ const GuardDashboard = () => {
       });
       
       setNewMessage('');
-      fetchMessages(activeChat.id);
+      // Don't fetch messages here - socket will handle real-time update
     } catch (error) {
       console.error('Send message error:', error);
       alert('Failed to send message');
@@ -293,6 +428,7 @@ const GuardDashboard = () => {
   const handleOpenChat = (conv) => {
     setActiveChat(conv);
     fetchMessages(conv.id);
+    markMessagesAsRead(conv.id);
   };
 
   const handleDocumentUpload = async (docType, file) => {
@@ -439,18 +575,6 @@ const GuardDashboard = () => {
   };
 
   const renderHome = () => {
-    // Calculate real stats from attendance data - count all marked attendance (verified + pending, exclude rejected)
-    // Handle both boolean and integer values for is_verified and is_rejected consistently
-    const totalShifts = attendance.filter(a => {
-      const isRejected = a.is_rejected === true || a.is_rejected === 1;
-      return a.present && !isRejected;
-    }).length;
-    const totalDays = attendance.length;
-    const totalAbsent = totalDays - totalShifts;
-    const attendanceRate = totalDays > 0 
-      ? Math.round((totalShifts / totalDays) * 100) 
-      : 0;
-    
     // Check today's attendance status
     const todayRecord = attendance.length > 0 && attendance[0].date === formatDate(new Date()) ? attendance[0] : null;
     const todayMarked = todayRecord && todayRecord.present;
@@ -458,27 +582,87 @@ const GuardDashboard = () => {
     const isVerified = todayRecord?.is_verified === true || todayRecord?.is_verified === 1;
     const isRejected = todayRecord?.is_rejected === true || todayRecord?.is_rejected === 1;
     const isPending = todayMarked && !isVerified && !isRejected;
-    
-    const duties = [
-      { time: '06:00 AM', text: 'Shift started - Gate A checkpoint', icon: 'fa-right-to-bracket', color: 'var(--grn)' },
-      { time: '08:30 AM', text: 'Patrol completed - Perimeter East', icon: 'fa-route', color: 'var(--tl)' },
-      { time: '10:00 AM', text: 'Visitor log updated - 4 entries', icon: 'fa-clipboard-list', color: 'var(--blu)' },
-      { time: '12:00 PM', text: 'Checkpoint report submitted', icon: 'fa-file-circle-check', color: 'var(--ylw)' }
-    ];
 
     return (
       <div style={{ padding: '20px 16px' }}>
         <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Good Morning</h2>
-          <p style={{ fontSize: '13px', color: 'var(--t2)' }}>Here is your duty summary</p>
+          <h2 style={{ fontSize: '20px', fontWeight: 700 }}>{getGreeting()}, {user.name}!</h2>
+          <p style={{ fontSize: '13px', color: 'var(--t2)' }}>Duty Time, Update Profile</p>
         </div>
 
-        {/* Today's Attendance Status Card */}
-        {todayMarked && (
+        {/* Duty Time Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '16px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
           <div style={{
-            background: isVerified ? 'linear-gradient(135deg, #059669, #10b981)' : 
-                       isRejected ? 'linear-gradient(135deg, #dc2626, #ef4444)' : 
-                       'linear-gradient(135deg, #d97706, #f59e0b)',
+            position: 'absolute',
+            right: '-20px',
+            top: '-20px',
+            width: '100px',
+            height: '100px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '50%'
+          }}></div>
+          <div style={{
+            fontSize: '12px',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            marginBottom: '6px'
+          }}>
+            Current Duty Time
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--t1)', marginBottom: '4px' }}>
+            8 Hrs <span style={{ fontSize: '14px', fontWeight: 500, opacity: 0.8 }}>(Active)</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
+            06:00 AM - 02:00 PM · {user.location || 'Post'}
+          </div>
+        </div>
+
+        {/* Update Profile Card */}
+        <div 
+          className="stat"
+          onClick={() => setActiveTab('profile')}
+          style={{ marginBottom: '16px', cursor: 'pointer' }}
+        >
+          <div className="lbl">
+            <span>Update Profile</span>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab('profile');
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(0, 188, 212, 0.2)',
+                borderColor: 'rgba(0, 188, 212, 0.3)'
+              }}
+            >
+              <i className="fa-solid fa-pen"></i>
+            </button>
+          </div>
+          <div className="num" style={{ color: 'var(--tl)' }}>Edit Details</div>
+          <i className="fa-solid fa-user-edit ico" style={{ color: 'var(--tl)' }}></i>
+        </div>
+
+        {/* Today's Attendance Status */}
+        {todayMarked ? (
+          <div style={{
+            background: isVerified ? 'linear-gradient(135deg, var(--grnD), var(--grn))' : 
+                       isRejected ? 'linear-gradient(135deg, var(--danger), rgba(239, 68, 68, 0.8))' : 
+                       'linear-gradient(135deg, var(--warning), rgba(245, 158, 11, 0.8))',
             borderRadius: '16px',
             padding: '20px',
             marginBottom: '16px',
@@ -503,7 +687,7 @@ const GuardDashboard = () => {
             }}>
               Today's Attendance
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 700, color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--t1)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <i className={`fa-solid ${isVerified ? 'fa-circle-check' : isRejected ? 'fa-circle-xmark' : 'fa-clock'}`}></i>
               {isVerified ? 'Present' : isRejected ? 'Rejected' : 'Pending Verification'}
             </div>
@@ -511,106 +695,42 @@ const GuardDashboard = () => {
               Marked at {todayRecord.time}
             </div>
           </div>
-        )}
-
-        {/* Duty Card */}
-        <div style={{
-          background: 'linear-gradient(135deg, var(--grnD), var(--grn))',
-          borderRadius: '16px',
-          padding: '20px',
-          marginBottom: '16px',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
+        ) : (
           <div style={{
-            position: 'absolute',
-            right: '-20px',
-            top: '-20px',
-            width: '100px',
-            height: '100px',
-            background: 'rgba(255, 255, 255, 0.08)',
-            borderRadius: '50%'
-          }}></div>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
+            background: 'linear-gradient(135deg, var(--card), var(--cardH))',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '16px',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
-            Today's Duty
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>
-            8 Hrs <span style={{ fontSize: '14px', fontWeight: 500, opacity: 0.8 }}>(Active)</span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
-            06:00 AM - 02:00 PM · {user.location || 'Post'}
-          </div>
-        </div>
-
-        {/* Stats - Responsive Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(2, 1fr)', 
-          gap: '12px', 
-          marginBottom: '24px',
-        }}>
-          <div className="stat" style={{ minHeight: 'auto', padding: '16px' }}>
-            <div className="lbl">Total Days</div>
-            <div className="num" style={{ color: 'var(--blu)', fontSize: '24px' }}>{totalDays}</div>
-          </div>
-          <div className="stat" style={{ minHeight: 'auto', padding: '16px' }}>
-            <div className="lbl">Total Present</div>
-            <div className="num" style={{ color: 'var(--grn)', fontSize: '24px' }}>{totalShifts}</div>
-          </div>
-          <div className="stat" style={{ minHeight: 'auto', padding: '16px' }}>
-            <div className="lbl">Total Absent</div>
-            <div className="num" style={{ color: 'var(--red)', fontSize: '24px' }}>{totalAbsent}</div>
-          </div>
-          <div className="stat" style={{ minHeight: 'auto', padding: '16px' }}>
-            <div className="lbl">Attendance Rate</div>
-            <div className="num" style={{ color: attendanceRate >= 80 ? 'var(--grn)' : attendanceRate >= 60 ? 'var(--ylw)' : 'var(--red)', fontSize: '24px' }}>{attendanceRate}%</div>
-          </div>
-        </div>
-
-        {/* Daily Duties Timeline */}
-        <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>My Daily Duties</div>
-        <div style={{ position: 'relative', paddingLeft: '24px' }}>
-          <div style={{
-            position: 'absolute',
-            left: '7px',
-            top: 0,
-            bottom: 0,
-            width: '2px',
-            background: 'var(--bd)'
-          }}></div>
-          {duties.map((duty, idx) => (
-            <div key={idx} style={{ position: 'relative', marginBottom: '20px' }}>
-              <div style={{
-                position: 'absolute',
-                left: '-24px',
-                top: '2px',
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                background: duty.color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1
-              }}>
-                <i className={`fa-solid ${duty.icon}`} style={{ fontSize: '7px', color: '#fff' }}></i>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--t3)', marginBottom: '2px' }}>{duty.time}</div>
-              <div style={{ fontSize: '13px' }}>{duty.text}</div>
+            <div style={{
+              position: 'absolute',
+              right: '-20px',
+              top: '-20px',
+              width: '100px',
+              height: '100px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              borderRadius: '50%'
+            }}></div>
+            <div style={{
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '6px'
+            }}>
+              Attendance Not Marked
             </div>
-          ))}
-        </div>
-
-        {/* FAB Button */}
-        <button className="fab">
-          <i className="fa-solid fa-plus"></i>
-        </button>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--t1)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <i className="fa-solid fa-camera"></i>
+              Mark Attendance Now
+            </div>
+            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
+              Go to Attendance tab to mark
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -646,11 +766,11 @@ const GuardDashboard = () => {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #009624, #00bcd4)',
+                background: 'linear-gradient(135deg, var(--grnD), var(--tl))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fff'
+                color: 'var(--t1)'
               }}>
                 <i className="fa-solid fa-users"></i>
               </div>
@@ -691,8 +811,8 @@ const GuardDashboard = () => {
                   }}>
                     <div style={{
                       maxWidth: '75%',
-                      background: isOwn ? 'linear-gradient(135deg, #00C853, #00A843)' : 'var(--card)',
-                      color: isOwn ? '#fff' : 'var(--t1)',
+                      background: isOwn ? 'linear-gradient(135deg, var(--grnD), var(--grn))' : 'var(--card)',
+                      color: isOwn ? 'var(--t1)' : 'var(--t1)',
                       padding: '8px 12px',
                       borderRadius: '12px',
                       borderTopRightRadius: isOwn ? '4px' : '12px',
@@ -725,6 +845,8 @@ const GuardDashboard = () => {
                 );
               })
             )}
+            {/* Auto-scroll anchor */}
+            <div ref={messagesEndRef} />
           </div>
 
           <form onSubmit={handleSendMessage} style={{
@@ -757,7 +879,7 @@ const GuardDashboard = () => {
               style={{
                 background: newMessage.trim() ? 'var(--grn)' : 'var(--card)',
                 border: 'none',
-                color: '#fff',
+                color: 'var(--t1)',
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
@@ -818,7 +940,7 @@ const GuardDashboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#fff',
+                  color: 'var(--t1)',
                   flexShrink: 0
                 }}>
                   <i className="fa-solid fa-users" style={{ fontSize: '20px' }}></i>
@@ -1045,7 +1167,7 @@ const GuardDashboard = () => {
               width: '100%',
               maxWidth: '320px',
               borderRadius: '14px',
-              background: '#000',
+              background: 'var(--bg1)',
               display: 'none',
               marginBottom: '16px'
             }}></video>
@@ -1180,6 +1302,8 @@ const GuardDashboard = () => {
     const docItems = [
       { key: 'aadhaar', label: 'Aadhaar Card', icon: 'fa-id-card' },
       { key: 'pan', label: 'PAN Card', icon: 'fa-file-invoice' },
+      { key: '10th_marksheet', label: '10th Marksheet', icon: 'fa-graduation-cap' },
+      { key: '12th_marksheet', label: '12th Marksheet', icon: 'fa-graduation-cap' },
       { key: 'police_verification', label: 'Police Verification', icon: 'fa-shield-halved' },
       { key: 'bank_passbook', label: 'Bank Passbook', icon: 'fa-building-columns' }
     ];
@@ -1188,10 +1312,10 @@ const GuardDashboard = () => {
     let profileCompletion = 0;
     const fields = ['name', 'mobile', 'email', 'profile_photo'];
     fields.forEach(field => {
-      if (user[field]) profileCompletion += 12.5;
+      if (user[field]) profileCompletion += 10;
     });
     docItems.forEach(doc => {
-      if (documents.find(d => d.doc_type === doc.key)) profileCompletion += 12.5;
+      if (documents.find(d => d.doc_type === doc.key)) profileCompletion += 10;
     });
     profileCompletion = Math.round(profileCompletion);
 
@@ -1308,12 +1432,12 @@ const GuardDashboard = () => {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '15px', fontWeight: 600 }}>{user.name}</div>
           <div style={{ fontSize: '11px', color: 'var(--t3)' }}>
-            {user.shift || 'Day 6AM-2PM'} · {user.location || ''}
+            Guard · {user.shift || 'Day 6AM-2PM'}
           </div>
         </div>
         <button 
           onClick={() => setShowSettings(true)}
-          style={{ background: 'none', border: 'none', color: 'var(--grn)', fontSize: '18px', cursor: 'pointer', marginRight: '8px' }}
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '18px', cursor: 'pointer', marginRight: '8px' }}
           title="Settings"
         >
           <i className="fa-solid fa-gear"></i>
@@ -1516,6 +1640,44 @@ const GuardDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Floating Contact Developer Button */}
+      <a
+        href="https://www.instagram.com/ajeet_up82?igsh=cGNyejJldWN3M3V5"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '20px',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 600,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          cursor: 'pointer',
+          zIndex: 9999,
+          textDecoration: 'none',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          whiteSpace: 'nowrap'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        }}
+        title="Contact Developer on Instagram"
+      >
+        Contact Developer
+      </a>
     </div>
   );
 };

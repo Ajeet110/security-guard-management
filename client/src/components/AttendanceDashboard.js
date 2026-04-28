@@ -53,6 +53,7 @@ const AttendanceDashboard = ({ userRole, userId }) => {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
   const [showGuardStats, setShowGuardStats] = useState(false);
+  const [showGuardPerformance, setShowGuardPerformance] = useState(false); // Separate state for overall performance stats
 
   useEffect(() => {
     fetchGuards();
@@ -64,6 +65,16 @@ const AttendanceDashboard = ({ userRole, userId }) => {
       fetchAttendanceData();
     }
   }, [selectedDate, allGuards]);
+
+  useEffect(() => {
+    const handleUserDataUpdated = () => {
+      fetchGuards();
+      fetchGuardStats();
+      fetchAttendanceData();
+    };
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    return () => window.removeEventListener('userDataUpdated', handleUserDataUpdated);
+  }, []);
 
   // Auto-refresh every 60 seconds when viewing today's date (optimized from 30s)
   useEffect(() => {
@@ -324,16 +335,25 @@ const AttendanceDashboard = ({ userRole, userId }) => {
     setShowPhotoModal(true);
   };
 
+  // Filter to show only guards with attendance (present) - hide absent guards
   const filteredData = attendanceData
-    .filter(guard => 
-      searchQuery === '' || 
-      guard.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      guard.user_id.includes(searchQuery)
-    )
+    .filter(guard => {
+      // First filter: Only show guards who are present (have attendance record)
+      if (!guard.attendance) return false;
+      
+      // Second filter: Search query
+      if (searchQuery !== '' && 
+          !guard.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !guard.user_id.includes(searchQuery)) {
+        return false;
+      }
+      
+      return true;
+    })
     .sort((a, b) => {
-      // Sort by verification status: Pending first, then Verified, then Rejected, then Absent
+      // Sort by verification status: Pending first, then Verified, then Rejected
       const getStatusPriority = (guard) => {
-        if (!guard.attendance) return 4; // Absent - last
+        if (!guard.attendance) return 4; // Should not happen due to filter
         if (guard.attendance.is_rejected) return 3; // Rejected
         if (guard.attendance.is_verified) return 2; // Verified
         return 1; // Pending - first
@@ -476,162 +496,178 @@ const AttendanceDashboard = ({ userRole, userId }) => {
           />
         </div>
 
-        {/* Pending Verification Section - Highlighted */}
+        {/* Pending Verification Section - Always visible if there are pending requests */}
         {pendingRequests.length > 0 && (
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--bd)',
-            background: 'linear-gradient(135deg, rgba(255, 204, 0, 0.15), rgba(255, 152, 0, 0.1))',
-            border: '2px solid var(--ylw)',
-            margin: '16px',
-            borderRadius: '12px'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '12px'
-            }}>
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ylw)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <i className="fa-solid fa-clock" style={{ fontSize: '20px' }}></i>
-                  Pending Verification Requests
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--t2)', marginTop: '4px' }}>
-                  {pendingRequests.length} guard(s) waiting for approval
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={handleVerifyAll}
-                  className="btn-p"
-                  style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 600 }}
-                >
-                  <i className="fa-solid fa-check-double" style={{ marginRight: '6px' }}></i>
-                  Verify All ({pendingRequests.length})
-                </button>
-                <button
-                  onClick={handleRejectAll}
-                  className="btn-d"
-                  style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 600 }}
-                >
-                  <i className="fa-solid fa-xmark" style={{ marginRight: '6px' }}></i>
-                  Reject All
-                </button>
-              </div>
-            </div>
-            
-            {/* Pending Guards List */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-              gap: '12px',
-              marginTop: '12px'
-            }}>
-              {pendingRequests.map(guard => (
-                  <div key={guard.id} style={{
-                    background: 'var(--card)',
-                    border: '2px solid var(--ylw)',
-                    borderRadius: '10px',
-                    padding: '12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Avatar user={guard} size="md" />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{guard.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--t3)', fontFamily: 'monospace' }}>
-                          {guard.user_id}
-                        </div>
-                      </div>
+              <div style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid var(--bd)',
+                background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(247, 147, 30, 0.1))',
+                border: '2px solid #FF6B35',
+                margin: '16px',
+                borderRadius: '12px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#FF6B35', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <i className="fa-solid fa-clock" style={{ fontSize: '20px' }}></i>
+                      Pending Verification Requests
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--t2)' }}>
-                      <i className="fa-solid fa-clock" style={{ marginRight: '4px' }}></i>
-                      {new Date(guard.attendance.marked_at).toLocaleTimeString('en-IN', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => openPhotoModal(guard)}
-                        className="btn-s btn-sm"
-                        style={{ flex: 1, padding: '6px', fontSize: '11px' }}
-                      >
-                        <i className="fa-solid fa-image" style={{ marginRight: '4px' }}></i>
-                        View Photo
-                      </button>
-                      <button
-                        onClick={() => handleVerify(guard.attendance.id)}
-                        disabled={verifying === guard.attendance.id}
-                        className="btn-s btn-sm"
-                        style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--grn)', borderColor: 'var(--grn)' }}
-                        title="Verify"
-                      >
-                        {verifying === guard.attendance.id ? (
-                          <i className="fa-solid fa-spinner fa-spin"></i>
-                        ) : (
-                          <i className="fa-solid fa-check"></i>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setRejectAttendanceId(guard.attendance.id);
-                          setShowRejectModal(true);
-                        }}
-                        className="btn-s btn-sm"
-                        style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--red)', borderColor: 'var(--red)' }}
-                        title="Reject"
-                      >
-                        <i className="fa-solid fa-xmark"></i>
-                      </button>
+                    <div style={{ fontSize: '12px', color: 'var(--t2)', marginTop: '4px' }}>
+                      {pendingRequests.length} guard(s) waiting for approval
                     </div>
                   </div>
-                ))}
-            </div>
-          </div>
-        )}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={handleVerifyAll}
+                      className="btn-p"
+                      style={{ 
+                        padding: '8px 16px', 
+                        fontSize: '12px', 
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
+                        border: 'none'
+                      }}
+                    >
+                      <i className="fa-solid fa-check-double" style={{ marginRight: '6px' }}></i>
+                      Verify All ({pendingRequests.length})
+                    </button>
+                    <button
+                      onClick={handleRejectAll}
+                      className="btn-d"
+                      style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 600 }}
+                    >
+                      <i className="fa-solid fa-xmark" style={{ marginRight: '6px' }}></i>
+                      Reject All
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Pending Guards Grid */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                  gap: '12px',
+                  marginTop: '12px'
+                }}>
+                  {pendingRequests.map(guard => (
+                    <div key={guard.id} style={{
+                      background: 'var(--card)',
+                      border: '2px solid #FF6B35',
+                      borderRadius: '10px',
+                      padding: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Avatar user={guard} size="md" />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 600 }}>{guard.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--t3)', fontFamily: 'monospace' }}>
+                            {guard.user_id}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--t2)' }}>
+                        <i className="fa-solid fa-clock" style={{ marginRight: '4px' }}></i>
+                        {new Date(guard.attendance.marked_at).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          onClick={() => openPhotoModal(guard)}
+                          className="btn-s btn-sm"
+                          style={{ 
+                            flex: 1, 
+                            padding: '6px', 
+                            fontSize: '11px',
+                            background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
+                            color: 'white',
+                            border: 'none'
+                          }}
+                        >
+                          <i className="fa-solid fa-image" style={{ marginRight: '4px' }}></i>
+                          View Photo
+                        </button>
+                        <button
+                          onClick={() => handleVerify(guard.attendance.id)}
+                          disabled={verifying === guard.attendance.id}
+                          className="btn-s btn-sm"
+                          style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--grn)', borderColor: 'var(--grn)' }}
+                          title="Verify"
+                        >
+                          {verifying === guard.attendance.id ? (
+                            <i className="fa-solid fa-spinner fa-spin"></i>
+                          ) : (
+                            <i className="fa-solid fa-check"></i>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRejectAttendanceId(guard.attendance.id);
+                            setShowRejectModal(true);
+                          }}
+                          className="btn-s btn-sm"
+                          style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--red)', borderColor: 'var(--red)' }}
+                          title="Reject"
+                        >
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {/* Stats Summary */}
-        <div style={{
-          padding: '12px 20px',
-          borderBottom: '1px solid var(--bd)',
-          background: 'var(--bg1)',
-          display: 'flex',
-          gap: '20px',
-          fontSize: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--ylw)', fontWeight: 600 }}>
-              ⏳ Pending: {pendingRequests.length}
+        {/* Today's Attendance Table - Collapsible */}
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--bd)', background: 'var(--bg1)' }}>
+          <button
+            onClick={() => setShowGuardStats(prev => !prev)}
+            className="btn-s"
+            style={{ padding: '8px 16px', fontSize: '13px', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <i className={`fa-solid fa-chevron-${showGuardStats ? 'up' : 'down'}`}></i>
+            <span>Today's Attendance Table</span>
+            <span style={{ marginLeft: '8px', padding: '2px 8px', background: 'var(--blu)', color: 'var(--t1)', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+              {filteredData.length} Present
             </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--grn)', fontWeight: 600 }}>
-              ✅ Verified: {attendanceData.filter(g => g.attendance && Boolean(g.attendance.is_verified)).length}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--red)', fontWeight: 600 }}>
-              ❌ Rejected: {attendanceData.filter(g => g.attendance && Boolean(g.attendance.is_rejected)).length}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--t3)', fontWeight: 600 }}>
-              ⚫ Absent: {attendanceData.filter(g => !g.attendance).length}
-            </span>
+          </button>
+          <div style={{ fontSize: '11px', color: 'var(--t3)', textAlign: 'center', marginTop: '4px' }}>
+            Click to {showGuardStats ? 'hide' : 'show'} detailed attendance table
           </div>
         </div>
 
-        {/* Attendance Table */}
-        {loadingAttendance ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--t3)' }}>
-            <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '24px' }}></i>
-            <div style={{ marginTop: '12px' }}>Loading attendance...</div>
-          </div>
-        ) : (
+
+
+        {/* Attendance Table - Only show when Guard Statistics is expanded */}
+        {showGuardStats && (
+          <>
+            {loadingAttendance ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--t3)' }}>
+                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '24px' }}></i>
+                <div style={{ marginTop: '12px' }}>Loading attendance...</div>
+              </div>
+            ) : filteredData.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--t3)' }}>
+                <i className="fa-solid fa-user-slash" style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.5 }}></i>
+                <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+                  {searchQuery ? 'No matching guards found' : 'No attendance marked yet'}
+                </div>
+                <div style={{ fontSize: '13px' }}>
+                  {searchQuery ? 'Try a different search term' : 'Guards will appear here once they mark attendance'}
+                </div>
+              </div>
+            ) : (
           <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
             <table className="tbl">
               <thead>
@@ -777,6 +813,8 @@ const AttendanceDashboard = ({ userRole, userId }) => {
               </tbody>
             </table>
           </div>
+            )}
+          </>
         )}
       </div>
 
@@ -956,21 +994,21 @@ const AttendanceDashboard = ({ userRole, userId }) => {
           justifyContent: 'space-between',
           alignItems: 'center',
           cursor: 'pointer'
-        }} onClick={() => setShowGuardStats(!showGuardStats)}>
+        }} onClick={() => setShowGuardPerformance(!showGuardPerformance)}>
           <div>
             <div style={{ fontSize: '14px', fontWeight: 600 }}>
-              Guard Attendance Statistics
+              Overall Guard Performance Statistics
             </div>
             <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '2px' }}>
-              Click to {showGuardStats ? 'hide' : 'show'} individual guard performance
+              Click to {showGuardPerformance ? 'hide' : 'show'} individual guard performance history
             </div>
           </div>
           <div>
-            <i className={`fa-solid fa-chevron-${showGuardStats ? 'up' : 'down'}`} style={{ color: 'var(--t3)' }}></i>
+            <i className={`fa-solid fa-chevron-${showGuardPerformance ? 'up' : 'down'}`} style={{ color: 'var(--t3)' }}></i>
           </div>
         </div>
 
-        {showGuardStats && (
+        {showGuardPerformance && (
           <div style={{ padding: '20px' }}>
             {loadingGuardStats ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--t3)' }}>

@@ -93,6 +93,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
       });
 
       await checkAuth(); // Refresh user data
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
       
       // Update photo preview with new path
       if (response.data.user?.profile_photo) {

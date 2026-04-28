@@ -70,6 +70,14 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    const handleUserDataUpdated = () => {
+      checkAuth();
+    };
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    return () => window.removeEventListener('userDataUpdated', handleUserDataUpdated);
+  }, []);
+
   const checkAuth = async () => {
     try {
       const response = await api.get('/auth/me');

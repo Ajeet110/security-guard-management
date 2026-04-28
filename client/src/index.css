@@ -27,9 +27,9 @@ body::before {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 87, 34, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(255, 179, 0, 0.04) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -45,69 +45,69 @@ code {
 }
 
 :root {
-  /* Enhanced Color Palette - Modern & Vibrant */
-  --bg1: #0a0f1a;
-  --bg2: #0f1729;
-  --bg3: #141d2e;
-  --card: #1a2332;
-  --cardH: #1f2937;
-  --inp: #1a2332;
+  /* Bhagwa (Saffron) Color Palette - Vibrant & Warm */
+  --bg1: #0f0a05;
+  --bg2: #1a1208;
+  --bg3: #24190b;
+  --card: #2a1f0f;
+  --cardH: #352812;
+  --inp: #2a1f0f;
   
-  /* Primary Colors - Vibrant Purple/Blue */
-  --primary: #6366f1;
-  --primary-light: #818cf8;
-  --primary-dark: #4f46e5;
-  --primary-glow: rgba(99, 102, 241, 0.4);
+  /* Primary Colors - Saffron/Orange */
+  --primary: #ff6b35;
+  --primary-light: #ff8b5c;
+  --primary-dark: #e65100;
+  --primary-glow: rgba(255, 107, 53, 0.4);
   
-  /* Secondary Colors - Emerald Green */
-  --secondary: #10b981;
-  --secondary-light: #34d399;
-  --secondary-dark: #059669;
-  --secondary-glow: rgba(16, 185, 129, 0.4);
+  /* Secondary Colors - Deep Orange */
+  --secondary: #ff5722;
+  --secondary-light: #ff8a65;
+  --secondary-dark: #d84315;
+  --secondary-glow: rgba(255, 87, 34, 0.4);
   
-  /* Accent Colors - Amber */
-  --accent: #f59e0b;
-  --accent-light: #fbbf24;
-  --accent-dark: #d97706;
-  --accent-glow: rgba(245, 158, 11, 0.4);
+  /* Accent Colors - Golden Yellow */
+  --accent: #ffb300;
+  --accent-light: #ffd54f;
+  --accent-dark: #ff8f00;
+  --accent-glow: rgba(255, 179, 0, 0.4);
   
   /* Status Colors */
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --info: #3b82f6;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --info: #2196f3;
   
   /* Additional Colors */
-  --grn: #10b981;
-  --grnD: #059669;
-  --grnG: rgba(16, 185, 129, 0.15);
-  --blu: #3b82f6;
-  --ylw: #f59e0b;
-  --red: #ef4444;
-  --tl: #06b6d4;
+  --grn: #4caf50;
+  --grnD: #388e3c;
+  --grnG: rgba(76, 175, 80, 0.15);
+  --blu: #2196f3;
+  --ylw: #ffb300;
+  --red: #f44336;
+  --tl: #00bcd4;
   
   /* Text Colors - Better Contrast */
-  --t1: #f8fafc;
-  --t2: #cbd5e1;
-  --t3: #94a3b8;
+  --t1: #fff8f0;
+  --t2: #e6d5c3;
+  --t3: #b39e8c;
   
   /* Border Colors */
   --bd: rgba(255, 255, 255, 0.08);
   --bdL: rgba(255, 255, 255, 0.12);
   
   /* Chat Colors */
-  --chatS: #1e3a8a;
-  --chatR: #1e293b;
+  --chatS: #5d4037;
+  --chatR: #3e2723;
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --gradient-secondary: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --gradient-accent: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  --gradient-card: linear-gradient(145deg, rgba(26, 35, 50, 0.8) 0%, rgba(31, 41, 55, 0.6) 100%);
-  --gradient-dark: linear-gradient(135deg, #0a0f1a 0%, #0f1729 50%, #141d2e 100%);
-  --gradient-mesh: radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-                   radial-gradient(at 0% 50%, rgba(245, 158, 11, 0.08) 0px, transparent 50%);
+  --gradient-primary: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
+  --gradient-secondary: linear-gradient(135deg, #ff5722 0%, #e65100 100%);
+  --gradient-accent: linear-gradient(135deg, #ffb300 0%, #ff9800 100%);
+  --gradient-card: linear-gradient(145deg, rgba(42, 31, 15, 0.8) 0%, rgba(53, 40, 18, 0.6) 100%);
+  --gradient-dark: linear-gradient(135deg, #0f0a05 0%, #1a1208 50%, #24190b 100%);
+  --gradient-mesh: radial-gradient(at 40% 20%, rgba(255, 107, 53, 0.15) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, rgba(255, 87, 34, 0.1) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, rgba(255, 179, 0, 0.08) 0px, transparent 50%);
   
   /* Shadows - Enhanced 3D */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -154,7 +154,7 @@ code {
 
 .btn-primary {
   background: var(--primary);
-  color: white;
+  color: var(--t1);
 }
 
 .btn-primary:hover {
@@ -163,12 +163,12 @@ code {
 
 .btn-secondary {
   background: var(--secondary);
-  color: white;
+  color: var(--t1);
 }
 
 .btn-success {
   background: var(--success);
-  color: white;
+  color: var(--t1);
 }
 
 .badge {
@@ -180,22 +180,22 @@ code {
 }
 
 .badge-success {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--grnG);
+  color: var(--grnD);
 }
 
 .badge-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(255, 152, 0, 0.15);
+  color: var(--warning);
 }
 
 .badge-danger {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(244, 67, 54, 0.15);
+  color: var(--danger);
 }
 
 .card {
-  background: white;
+  background: var(--card);
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
@@ -229,7 +229,7 @@ code {
 }
 
 .modal {
-  background: white;
+  background: var(--card);
   border-radius: 0.5rem;
   padding: 2rem;
   max-width: 500px;
@@ -300,7 +300,7 @@ code {
 /* Primary Button - 3D Gradient Effect with Glow */
 .btn-p {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--t1);
   border: none;
   border-radius: var(--radius-xl);
   padding: 1rem 2rem;
@@ -311,7 +311,7 @@ code {
   transition: all var(--transition-normal);
   position: relative;
   box-shadow: 
-    0 8px 16px rgba(99, 102, 241, 0.3),
+    0 8px 16px rgba(255, 107, 53, 0.3),
     0 4px 8px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transform: translateY(0) scale(1);
@@ -336,7 +336,7 @@ code {
   border-radius: var(--radius-xl);
   padding: 2px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(var(--t1) 0 0) content-box, linear-gradient(var(--t1) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
@@ -346,11 +346,11 @@ code {
 .btn-p:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 
-    0 12px 32px rgba(99, 102, 241, 0.5),
+    0 12px 32px rgba(255, 107, 53, 0.5),
     0 8px 16px rgba(0, 0, 0, 0.2),
-    0 0 40px rgba(99, 102, 241, 0.3),
+    0 0 40px rgba(255, 107, 53, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  background: linear-gradient(135deg, #ff8b5c 0%, #ff6b35 100%);
 }
 
 .btn-p:hover::after {
@@ -360,7 +360,7 @@ code {
 .btn-p:active {
   transform: translateY(-2px) scale(0.98);
   box-shadow: 
-    0 6px 16px rgba(99, 102, 241, 0.4),
+    0 6px 16px rgba(255, 107, 53, 0.4),
     0 4px 8px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
@@ -396,11 +396,11 @@ code {
 }
 
 .btn-s:hover {
-  background: rgba(31, 41, 55, 0.8);
+  background: rgba(53, 40, 18, 0.8);
   border-color: var(--primary);
   transform: translateY(-3px);
   box-shadow: 
-    0 8px 20px rgba(99, 102, 241, 0.25),
+    0 8px 20px rgba(255, 107, 53, 0.25),
     0 4px 8px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
   color: var(--primary-light);
@@ -425,7 +425,7 @@ code {
 /* Success Button with Glow */
 .btn-success {
   background: var(--gradient-secondary);
-  color: white;
+  color: var(--t1);
   border: none;
   border-radius: var(--radius-lg);
   padding: 0.75rem 1.5rem;
@@ -453,7 +453,7 @@ code {
 /* Danger Button with Glow */
 .btn-danger, .btn-d {
   background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+  color: var(--t1);
   border: none;
   border-radius: var(--radius-lg);
   padding: 0.75rem 1.5rem;
@@ -498,14 +498,14 @@ code {
 }
 
 .btn-icon:hover {
-  background: rgba(31, 41, 55, 0.8);
+  background: rgba(53, 40, 18, 0.8);
   border-color: var(--primary);
   color: var(--primary-light);
   transform: scale(1.15) rotate(5deg);
   box-shadow: 
-    0 8px 20px rgba(99, 102, 241, 0.3),
+    0 8px 20px rgba(255, 107, 53, 0.3),
     0 4px 8px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(99, 102, 241, 0.2);
+    0 0 20px rgba(255, 107, 53, 0.2);
 }
 
 .btn-icon:active {
@@ -529,7 +529,7 @@ code {
   margin-left: -10px;
   margin-top: -10px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: var(--t1);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -764,13 +764,13 @@ code {
 /* 3D Hover Effect with Depth */
 .card:hover, .stat:hover {
   transform: perspective(1000px) rotateX(2deg) rotateY(2deg) translateY(-12px) translateZ(30px) scale(1.02);
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(31, 41, 55, 0.7);
+  border-color: rgba(255, 107, 53, 0.4);
+  background: rgba(53, 40, 18, 0.7);
   box-shadow: 
     0 25px 50px rgba(0, 0, 0, 0.35),
     0 12px 24px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(99, 102, 241, 0.2),
-    0 0 40px rgba(99, 102, 241, 0.15),
+    0 0 0 1px rgba(255, 107, 53, 0.2),
+    0 0 40px rgba(255, 107, 53, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
@@ -783,11 +783,11 @@ code {
   right: -2px;
   bottom: -2px;
   background: linear-gradient(45deg, 
-    rgba(99, 102, 241, 0.6) 0%,
-    rgba(16, 185, 129, 0.4) 25%,
-    rgba(245, 158, 11, 0.4) 50%,
-    rgba(99, 102, 241, 0.6) 75%,
-    rgba(16, 185, 129, 0.4) 100%);
+    rgba(255, 107, 53, 0.6) 0%,
+    rgba(255, 87, 34, 0.4) 25%,
+    rgba(255, 179, 0, 0.4) 50%,
+    rgba(255, 107, 53, 0.6) 75%,
+    rgba(255, 87, 34, 0.4) 100%);
   border-radius: calc(var(--radius-xl) + 2px);
   z-index: -1;
   opacity: 0;
@@ -1047,11 +1047,11 @@ code {
   position: absolute;
   inset: -2px;
   background: linear-gradient(45deg, 
-    rgba(99, 102, 241, 0.4) 0%,
-    rgba(16, 185, 129, 0.3) 25%,
-    rgba(245, 158, 11, 0.3) 50%,
-    rgba(99, 102, 241, 0.4) 75%,
-    rgba(16, 185, 129, 0.3) 100%);
+    rgba(255, 107, 53, 0.4) 0%,
+    rgba(255, 87, 34, 0.3) 25%,
+    rgba(255, 179, 0, 0.3) 50%,
+    rgba(255, 107, 53, 0.4) 75%,
+    rgba(255, 87, 34, 0.3) 100%);
   border-radius: calc(var(--radius-2xl) + 2px);
   z-index: -1;
   opacity: 0.5;
@@ -1090,9 +1090,9 @@ code {
   height: 2px;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(99, 102, 241, 0.5), 
-    rgba(16, 185, 129, 0.3),
-    rgba(99, 102, 241, 0.5),
+    rgba(255, 107, 53, 0.5), 
+    rgba(255, 87, 34, 0.3),
+    rgba(255, 107, 53, 0.5),
     transparent);
 }
 
@@ -1255,7 +1255,7 @@ code {
   transform: scale(1.1);
   box-shadow: 
     0 6px 16px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(99, 102, 241, 0.3),
+    0 0 20px rgba(255, 107, 53, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border-color: var(--primary);
 }
@@ -1352,7 +1352,7 @@ code {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--t2);
-  border-bottom: 2px solid rgba(99, 102, 241, 0.2);
+  border-bottom: 2px solid rgba(255, 107, 53, 0.2);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -1384,7 +1384,7 @@ code {
 
 .tbl tr:hover {
   transform: translateX(4px);
-  box-shadow: -4px 0 12px rgba(99, 102, 241, 0.15);
+  box-shadow: -4px 0 12px rgba(255, 107, 53, 0.15);
 }
 
 .tbl tbody tr:last-child td:first-child {
@@ -1780,15 +1780,15 @@ code {
   position: fixed;
   bottom: 80px;
   right: 20px;
-  background: linear-gradient(135deg, var(--grnD), var(--grn));
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: var(--t1);
   border: none;
   border-radius: 50%;
   width: 56px;
   height: 56px;
   font-size: 20px;
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(0, 200, 83, 0.4);
+  box-shadow: 0 6px 24px rgba(255, 107, 53, 0.4);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -2276,8 +2276,8 @@ code {
   }
 
   body {
-    background: white;
-    color: black;
+    background: var(--t1);
+    color: var(--bg1);
   }
 }
 
@@ -2298,8 +2298,8 @@ code {
 /* High contrast mode */
 @media (prefers-contrast: high) {
   :root {
-    --bd: #ffffff;
-    --bdL: #ffffff;
+    --bd: var(--t1);
+    --bdL: var(--t1);
   }
 
   .stat,
