@@ -2,6 +2,7 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { createBackup } = require('./backup');
 
 let db = null;
 // Use environment variable or default path
@@ -72,6 +73,13 @@ const initDatabase = async () => {
     console.log(`📁 Checking for existing database at: ${dbPath}`);
     buffer = fs.readFileSync(dbPath);
     console.log(`✅ Found existing database file (${buffer.length} bytes)`);
+    
+    // Create backup of existing database before any changes
+    console.log('🔄 Creating backup of existing database...');
+    const backupPath = createBackup(dbPath, 'startup');
+    if (backupPath) {
+      console.log(`✅ Startup backup created successfully`);
+    }
   } catch (err) {
     console.log(`ℹ️ No existing database found, will create new one: ${err.message}`);
     buffer = null;
@@ -309,6 +317,20 @@ const initDatabase = async () => {
 
   // Run migrations AFTER tables are created
   console.log('🔄 Running database migrations...');
+  
+  // Create backup before running migrations (if database has data)
+  try {
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    if (userCount && userCount.count > 0) {
+      console.log(`📊 Database has ${userCount.count} users, creating pre-migration backup...`);
+      const migrationBackup = createBackup(dbPath, 'pre-migration');
+      if (migrationBackup) {
+        console.log('✅ Pre-migration backup created');
+      }
+    }
+  } catch (err) {
+    console.log('ℹ️ Could not check user count for backup (table may not exist yet)');
+  }
   
   // Add display_password column if it doesn't exist (migration)
   try {

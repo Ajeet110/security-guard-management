@@ -378,6 +378,8 @@ const SearchUsersModal = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
@@ -398,7 +400,13 @@ const SearchUsersModal = ({ onClose }) => {
     }
   };
 
-  const handleStartChat = async (userId) => {
+  const handleUserClick = (user) => {
+    setSelectedUser(user);
+    setShowProfile(true);
+  };
+
+  const handleStartChat = async (userId, e) => {
+    e.stopPropagation();
     try {
       const response = await api.post('/chat/conversation/personal', { user_id: userId });
       
@@ -412,6 +420,22 @@ const SearchUsersModal = ({ onClose }) => {
       alert('Failed to start chat');
     }
   };
+
+  if (showProfile && selectedUser) {
+    return (
+      <ProfileViewer
+        user={selectedUser}
+        onClose={() => {
+          setShowProfile(false);
+          setSelectedUser(null);
+        }}
+        onBack={() => {
+          setShowProfile(false);
+          setSelectedUser(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="modal-bg" onClick={(e) => e.target.className === 'modal-bg' && onClose()}>
@@ -454,6 +478,7 @@ const SearchUsersModal = ({ onClose }) => {
                 {searchResults.map(user => (
                   <div
                     key={user.id}
+                    onClick={() => handleUserClick(user)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -462,7 +487,17 @@ const SearchUsersModal = ({ onClose }) => {
                       background: 'var(--card)',
                       borderRadius: '10px',
                       marginBottom: '8px',
-                      border: '1px solid var(--bd)'
+                      border: '1px solid var(--bd)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg3)';
+                      e.currentTarget.style.borderColor = 'var(--primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--card)';
+                      e.currentTarget.style.borderColor = 'var(--bd)';
                     }}
                   >
                     <Avatar user={user} size="md" online={user.is_online} />
@@ -480,7 +515,7 @@ const SearchUsersModal = ({ onClose }) => {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
                         className="btn-s btn-sm"
-                        onClick={() => handleStartChat(user.id)}
+                        onClick={(e) => handleStartChat(user.id, e)}
                         style={{ color: 'var(--grn)', borderColor: 'rgba(0, 200, 83, 0.3)' }}
                         title="Send Message"
                       >

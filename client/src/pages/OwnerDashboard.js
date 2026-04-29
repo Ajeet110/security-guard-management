@@ -197,46 +197,27 @@ const OwnerDashboard = () => {
         >
           <div className="lbl">
             <span>Total Managers</span>
-            <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
-              <button 
-                className="btn-icon btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedRole('Manager');
-                  setShowAddUser(true);
-                }}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  fontSize: '12px',
-                  background: 'rgba(59, 130, 246, 0.2)',
-                  borderColor: 'rgba(59, 130, 246, 0.3)'
-                }}
-                title="Add Manager"
-              >
-                <i className="fa-solid fa-plus"></i>
-              </button>
-              {stats.managers > 0 && (
-                <button 
-                  className="btn-icon btn-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteAllRole('Manager');
-                  }}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    fontSize: '12px',
-                    background: 'rgba(239, 68, 68, 0.2)',
-                    borderColor: 'rgba(239, 68, 68, 0.3)',
-                    color: 'var(--red)'
-                  }}
-                  title="Delete All Managers"
-                >
-                  <i className="fa-solid fa-trash"></i>
-                </button>
-              )}
-            </div>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Manager');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 0.3)'
+              }}
+              title="Add Manager"
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
           </div>
           <div className="num" style={{ color: 'var(--blu)' }}>{stats.managers}</div>
           <i className="fa-solid fa-briefcase ico" style={{ color: 'var(--blu)' }}></i>
@@ -248,46 +229,27 @@ const OwnerDashboard = () => {
         >
           <div className="lbl">
             <span>Total Supervisors</span>
-            <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
-              <button 
-                className="btn-icon btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedRole('Supervisor');
-                  setShowAddUser(true);
-                }}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  fontSize: '12px',
-                  background: 'rgba(245, 158, 11, 0.2)',
-                  borderColor: 'rgba(245, 158, 11, 0.3)'
-                }}
-                title="Add Supervisor"
-              >
-                <i className="fa-solid fa-plus"></i>
-              </button>
-              {stats.supervisors > 0 && (
-                <button 
-                  className="btn-icon btn-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteAllRole('Supervisor');
-                  }}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    fontSize: '12px',
-                    background: 'rgba(239, 68, 68, 0.2)',
-                    borderColor: 'rgba(239, 68, 68, 0.3)',
-                    color: 'var(--red)'
-                  }}
-                  title="Delete All Supervisors"
-                >
-                  <i className="fa-solid fa-trash"></i>
-                </button>
-              )}
-            </div>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Supervisor');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(245, 158, 11, 0.2)',
+                borderColor: 'rgba(245, 158, 11, 0.3)'
+              }}
+              title="Add Supervisor"
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
           </div>
           <div className="num" style={{ color: 'var(--ylw)' }}>{stats.supervisors}</div>
           <i className="fa-solid fa-hard-hat ico" style={{ color: 'var(--ylw)' }}></i>
@@ -299,46 +261,27 @@ const OwnerDashboard = () => {
         >
           <div className="lbl">
             <span>Total Guards</span>
-            <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
-              <button 
-                className="btn-icon btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedRole('Guard');
-                  setShowAddUser(true);
-                }}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  fontSize: '12px',
-                  background: 'rgba(16, 185, 129, 0.2)',
-                  borderColor: 'rgba(16, 185, 129, 0.3)'
-                }}
-                title="Add Guard"
-              >
-                <i className="fa-solid fa-plus"></i>
-              </button>
-              {stats.guards > 0 && (
-                <button 
-                  className="btn-icon btn-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteAllRole('Guard');
-                  }}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    fontSize: '12px',
-                    background: 'rgba(239, 68, 68, 0.2)',
-                    borderColor: 'rgba(239, 68, 68, 0.3)',
-                    color: 'var(--red)'
-                  }}
-                  title="Delete All Guards"
-                >
-                  <i className="fa-solid fa-trash"></i>
-                </button>
-              )}
-            </div>
+            <button 
+              className="btn-icon btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRole('Guard');
+                setShowAddUser(true);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '12px',
+                background: 'rgba(16, 185, 129, 0.2)',
+                borderColor: 'rgba(16, 185, 129, 0.3)'
+              }}
+              title="Add Guard"
+            >
+              <i className="fa-solid fa-plus"></i>
+            </button>
           </div>
           <div className="num" style={{ color: 'var(--grn)' }}>{stats.guards}</div>
           <i className="fa-solid fa-shield ico" style={{ color: 'var(--grn)' }}></i>
@@ -464,6 +407,7 @@ const OwnerDashboard = () => {
           onUserClick={openProfile}
           onManageClick={openManagement}
           onOpenChat={(convId) => setChatConversationId(convId)}
+          onDeleteAll={handleDeleteAllRole}
           visiblePasswords={visiblePasswords}
           togglePasswordVisibility={togglePasswordVisibility}
         />
@@ -1157,8 +1101,23 @@ const ProfileModal = ({ user, onClose, onOpenChat, visiblePasswords, togglePassw
 };
 
 // User List Modal Component
-const UserListModal = ({ role, users, onClose, onUserClick, onManageClick, onOpenChat, visiblePasswords, togglePasswordVisibility }) => {
+const UserListModal = ({ role, users, onClose, onUserClick, onManageClick, onOpenChat, visiblePasswords, togglePasswordVisibility, onDeleteAll }) => {
   const [startingChat, setStartingChat] = React.useState(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  
+  // Filter users based on search query
+  const filteredUsers = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return users;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return users.filter(user => 
+      user.name.toLowerCase().includes(query) ||
+      user.user_id.toLowerCase().includes(query) ||
+      (user.mobile && user.mobile.includes(query))
+    );
+  }, [users, searchQuery]);
 
   const handleStartChat = async (userId, e) => {
     e.stopPropagation();
@@ -1184,12 +1143,82 @@ const UserListModal = ({ role, users, onClose, onUserClick, onManageClick, onOpe
   return (
     <div className="modal-bg" onClick={(e) => e.target.className === 'modal-bg' && onClose()}>
       <div className="modal" style={{ width: '800px' }}>
-        <div className="modal-head">
+        <div className="modal-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3>All {role}s - {users.length}</h3>
-          <button className="modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark"></i>
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {users.length > 0 && (
+              <button
+                className="btn-s btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteAll(role);
+                }}
+                style={{ 
+                  color: 'var(--red)', 
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                  padding: '6px 12px',
+                  fontSize: '12px'
+                }}
+                title={`Delete All ${role}s`}
+              >
+                <i className="fa-solid fa-trash" style={{ marginRight: '6px' }}></i>
+                Delete All
+              </button>
+            )}
+            <button className="modal-close" onClick={onClose}>
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
         </div>
+        
+        {/* Search Input */}
+        {users.length > 0 && (
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--bd)' }}>
+            <div style={{ position: 'relative' }}>
+              <i className="fa-solid fa-search" style={{ 
+                position: 'absolute', 
+                left: '12px', 
+                top: '50%', 
+                transform: 'translateY(-50%)',
+                color: 'var(--t3)',
+                fontSize: '14px'
+              }}></i>
+              <input
+                type="text"
+                className="finput"
+                placeholder={`Search ${role}s by name, ID, or phone...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: '36px' }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--t3)',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                  title="Clear search"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <div style={{ fontSize: '12px', color: 'var(--t3)', marginTop: '8px' }}>
+                Found {filteredUsers.length} of {users.length} {role}s
+              </div>
+            )}
+          </div>
+        )}
+        
         <div className="modal-body" style={{ padding: 0 }}>
           <table className="tbl">
             <thead>
@@ -1202,14 +1231,14 @@ const UserListModal = ({ role, users, onClose, onUserClick, onManageClick, onOpe
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="5" style={{ textAlign: 'center', color: 'var(--t3)', padding: '30px' }}>
-                    No {role}s found
+                    {searchQuery ? `No ${role}s found matching "${searchQuery}"` : `No ${role}s found`}
                   </td>
                 </tr>
               ) : (
-                users.map(user => (
+                filteredUsers.map(user => (
                   <tr 
                     key={user.id}
                     style={{ cursor: 'pointer' }}
