@@ -56,7 +56,69 @@ const DashboardLayout = ({ children, onAddUser }) => {
               <div style={{ padding: '0 8px 8px', fontSize: '11px', fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                 Hierarchy
               </div>
-              <div style={{ maxHeight: 'calc(100vh - 230px)', overflowY: 'auto', padding: '0 4px' }}>
+              
+              {/* Action Buttons for Mobile */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '0 8px 12px' }}>
+                <button 
+                  className="btn-s" 
+                  onClick={() => setShowSearch(true)}
+                  style={{ 
+                    color: 'var(--blu)', 
+                    borderColor: 'rgba(0, 123, 255, 0.3)',
+                    padding: '10px 12px',
+                    fontSize: '12px'
+                  }}
+                >
+                  <i className="fa-solid fa-search" style={{ marginRight: '6px' }}></i>
+                  Search
+                </button>
+
+                <button 
+                  className="btn-s" 
+                  onClick={() => setShowSettings(true)}
+                  style={{ 
+                    color: 'var(--grn)', 
+                    borderColor: 'rgba(0, 200, 83, 0.3)',
+                    padding: '10px 12px',
+                    fontSize: '12px'
+                  }}
+                >
+                  <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
+                  Settings
+                </button>
+
+                {user.role === 'Owner' && (
+                  <button 
+                    className="btn-s" 
+                    onClick={() => setShowCredentials(true)}
+                    style={{ 
+                      padding: '10px 12px',
+                      fontSize: '12px',
+                      color: 'var(--ylw)',
+                      borderColor: 'rgba(255, 193, 7, 0.3)'
+                    }}
+                  >
+                    <i className="fa-solid fa-key" style={{ marginRight: '6px' }}></i>
+                    Credentials
+                  </button>
+                )}
+                
+                <button 
+                  className="btn-s"
+                  onClick={() => setShowResetPassword(true)}
+                  style={{ 
+                    padding: '10px 12px',
+                    fontSize: '12px',
+                    color: 'var(--tl)',
+                    borderColor: 'rgba(0, 188, 212, 0.3)'
+                  }}
+                >
+                  <i className="fa-solid fa-rotate" style={{ marginRight: '6px' }}></i>
+                  Password
+                </button>
+              </div>
+
+              <div style={{ maxHeight: 'calc(100vh - 350px)', overflowY: 'auto', padding: '0 4px' }}>
                 <HierarchyTree userId={user.role === 'Owner' ? '2026' : user.user_id} />
               </div>
               {onAddUser && (
@@ -93,6 +155,27 @@ const DashboardLayout = ({ children, onAddUser }) => {
           isOpen={showSettings}
           onClose={() => setShowSettings(false)}
         />
+
+        {/* Search Users Modal */}
+        {showSearch && (
+          <SearchUsersModal
+            onClose={() => setShowSearch(false)}
+          />
+        )}
+
+        {/* View All Credentials Modal */}
+        {showCredentials && (
+          <ViewCredentialsModal
+            onClose={() => setShowCredentials(false)}
+          />
+        )}
+
+        {/* Reset Password Modal */}
+        {showResetPassword && (
+          <ResetPasswordModal
+            onClose={() => setShowResetPassword(false)}
+          />
+        )}
       </div>
     );
   }
@@ -295,7 +378,6 @@ const SearchUsersModal = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [showProfileViewer, setShowProfileViewer] = useState(null);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
@@ -329,10 +411,6 @@ const SearchUsersModal = ({ onClose }) => {
       console.error('Start chat error:', error);
       alert('Failed to start chat');
     }
-  };
-
-  const handleViewProfile = (userId) => {
-    setShowProfileViewer(userId);
   };
 
   return (
@@ -408,14 +486,6 @@ const SearchUsersModal = ({ onClose }) => {
                       >
                         <i className="fa-solid fa-message"></i>
                       </button>
-                      <button
-                        className="btn-s btn-sm"
-                        onClick={() => handleViewProfile(user.id)}
-                        style={{ color: 'var(--blu)', borderColor: 'rgba(0, 188, 212, 0.3)' }}
-                        title="View Profile"
-                      >
-                        <i className="fa-solid fa-user"></i>
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -431,14 +501,6 @@ const SearchUsersModal = ({ onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* Profile Viewer */}
-      {showProfileViewer && (
-        <ProfileViewer
-          userId={showProfileViewer}
-          onClose={() => setShowProfileViewer(null)}
-        />
-      )}
     </div>
   );
 };

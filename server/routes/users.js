@@ -76,11 +76,12 @@ router.post('/create', authenticateToken, (req, res) => {
     const hashedPassword = bcrypt.hashSync(userPassword, 10);
 
     const result = db.prepare(`
-      INSERT INTO users (user_id, password, name, role, parent_id, mobile, email, location, shift, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (user_id, password, display_password, name, role, parent_id, mobile, email, location, shift, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       userId, 
       hashedPassword,
+      userPassword, // Store plain password for display
       name, 
       role, 
       parent_id || creator.id, 
@@ -129,7 +130,7 @@ router.get('/hierarchy', authenticateToken, (req, res) => {
     if (req.user.role === 'Owner') {
       users = db.prepare(`
         SELECT u.id, u.user_id, u.name, u.role, u.parent_id, u.mobile, u.email, u.profile_photo, 
-               u.is_online, u.last_seen, u.created_at, u.created_by, u.location, u.shift,
+               u.is_online, u.last_seen, u.created_at, u.created_by, u.location, u.shift, u.display_password,
                creator.name as creator_name, creator.role as creator_role
         FROM users u
         LEFT JOIN users creator ON u.created_by = creator.id
@@ -146,7 +147,7 @@ router.get('/hierarchy', authenticateToken, (req, res) => {
           INNER JOIN hierarchy h ON u.parent_id = h.id
         )
         SELECT u.id, u.user_id, u.name, u.role, u.parent_id, u.mobile, u.email, 
-               u.profile_photo, u.is_online, u.last_seen, u.created_at, u.created_by, u.location, u.shift,
+               u.profile_photo, u.is_online, u.last_seen, u.created_at, u.created_by, u.location, u.shift, u.display_password,
                creator.name as creator_name, creator.role as creator_role
         FROM users u
         LEFT JOIN users creator ON u.created_by = creator.id
@@ -172,7 +173,7 @@ router.get('/search', authenticateToken, (req, res) => {
 
   try {
     const users = db.prepare(`
-      SELECT id, user_id, name, role, mobile, email, profile_photo, is_online, last_seen
+      SELECT id, user_id, name, role, mobile, email, profile_photo, is_online, last_seen, display_password
       FROM users
       WHERE (LOWER(user_id) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?) OR LOWER(role) LIKE LOWER(?)) AND id != ?
       LIMIT 20
@@ -190,7 +191,7 @@ router.get('/profile/:userId', authenticateToken, (req, res) => {
   try {
     const user = db.prepare(`
       SELECT id, user_id, name, role, mobile, email, profile_photo, 
-             is_online, last_seen, created_at, location, shift
+             is_online, last_seen, created_at, location, shift, display_password
       FROM users WHERE id = ?
     `).get(req.params.userId);
 

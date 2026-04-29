@@ -176,8 +176,9 @@ router.post('/reset-password', authenticateToken, (req, res) => {
     }
 
     const hashedPassword = bcrypt.hashSync(new_password, 10);
-    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(
-      hashedPassword, 
+    db.prepare('UPDATE users SET password = ?, display_password = ? WHERE id = ?').run(
+      hashedPassword,
+      new_password, // Store plain password for display
       req.user.id
     );
 
@@ -191,7 +192,7 @@ router.post('/reset-password', authenticateToken, (req, res) => {
 // Get current user
 router.get('/me', authenticateToken, (req, res) => {
   try {
-    const user = db.prepare('SELECT id, user_id, name, role, mobile, email, profile_photo, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, user_id, name, role, mobile, email, profile_photo, created_at, display_password FROM users WHERE id = ?').get(req.user.id);
     res.json(user);
   } catch (error) {
     console.error('Get user error:', error);

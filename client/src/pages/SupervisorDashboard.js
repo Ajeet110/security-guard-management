@@ -499,8 +499,14 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
   const [rejectDocType, setRejectDocType] = React.useState(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
 
-  // Generate default password based on user_id and role
-  const getDefaultPassword = (user) => {
+  // Get actual password from database
+  const getActualPassword = (user) => {
+    // Return the actual stored password if available
+    if (user.display_password) {
+      return user.display_password;
+    }
+    
+    // Fallback to generated default if no stored password (for old users)
     if (!user.user_id) return 'Not available';
     const lastFour = user.user_id.slice(-4);
     const rolePrefix = {
@@ -722,7 +728,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
                   fontFamily: 'monospace',
                   letterSpacing: '1px'
                 }}>
-                  {visiblePasswords[user.id] ? getDefaultPassword(user) : '••••••'}
+                  {visiblePasswords[user.id] ? getActualPassword(user) : '••••••'}
                 </div>
                 <button
                   onClick={() => togglePasswordVisibility(user.id)}
@@ -744,7 +750,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
                 </button>
               </div>
               <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '6px' }}>
-                Default password based on user ID
+                {user.display_password ? 'Actual password from database' : 'Default password (user created before update)'}
               </div>
             </div>
           </div>
