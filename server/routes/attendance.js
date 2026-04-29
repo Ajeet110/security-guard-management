@@ -581,7 +581,9 @@ router.post('/verify-all', authenticateToken, (req, res) => {
       // Get all guards under manager's hierarchy
       const descendants = getDescendantIds(req.user.id);
       if (descendants.length > 0) {
-        query += ` AND u.id IN (${descendants.join(',')})`;
+        const placeholders = descendants.map(() => '?').join(',');
+        query += ` AND u.id IN (${placeholders})`;
+        params.push(...descendants);
       }
     }
 
@@ -649,7 +651,9 @@ router.post('/reject-all', authenticateToken, (req, res) => {
     } else if (req.user.role === 'Manager') {
       const descendants = getDescendantIds(req.user.id);
       if (descendants.length > 0) {
-        query += ` AND u.id IN (${descendants.join(',')})`;
+        const placeholders = descendants.map(() => '?').join(',');
+        query += ` AND u.id IN (${placeholders})`;
+        params.push(...descendants);
       }
     }
 

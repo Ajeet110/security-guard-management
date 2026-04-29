@@ -176,9 +176,8 @@ router.post('/reset-password', authenticateToken, (req, res) => {
     }
 
     const hashedPassword = bcrypt.hashSync(new_password, 10);
-    db.prepare('UPDATE users SET password = ?, display_password = ? WHERE id = ?').run(
+    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(
       hashedPassword, 
-      new_password,
       req.user.id
     );
 

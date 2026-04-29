@@ -499,6 +499,20 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
   const [rejectDocType, setRejectDocType] = React.useState(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
 
+  // Generate default password based on user_id and role
+  const getDefaultPassword = (user) => {
+    if (!user.user_id) return 'Not available';
+    const lastFour = user.user_id.slice(-4);
+    const rolePrefix = {
+      'Manager': 'Mgr',
+      'Supervisor': 'Sup',
+      'Guard': 'Grd',
+      'Owner': 'Own'
+    };
+    const prefix = rolePrefix[user.role] || 'Usr';
+    return `${prefix}@${lastFour}`;
+  };
+
   React.useEffect(() => {
     fetchDocuments();
   }, [user.id]);
@@ -708,7 +722,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
                   fontFamily: 'monospace',
                   letterSpacing: '1px'
                 }}>
-                  {visiblePasswords[user.id] ? 'Contact Admin' : '••••••'}
+                  {visiblePasswords[user.id] ? getDefaultPassword(user) : '••••••'}
                 </div>
                 <button
                   onClick={() => togglePasswordVisibility(user.id)}
@@ -730,7 +744,7 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
                 </button>
               </div>
               <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '6px' }}>
-                Password shown only during user creation
+                Default password based on user ID
               </div>
             </div>
           </div>

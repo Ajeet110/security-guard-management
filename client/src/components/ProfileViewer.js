@@ -13,7 +13,7 @@ const ProfileViewer = ({ userId, onClose }) => {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/users/${userId}/profile`);
+      const response = await api.get(`/users/profile/${userId}`);
       // Client-side privacy filter (defense in depth)
       const filteredProfile = filterPrivateData(response.data);
       setProfile(filteredProfile);
@@ -32,20 +32,36 @@ const ProfileViewer = ({ userId, onClose }) => {
     
     const { 
       id, 
+      user_id,
       name, 
       profile_photo, 
       role, 
       is_online, 
-      last_seen 
+      last_seen,
+      mobile,
+      email,
+      location,
+      shift,
+      documents,
+      attendance_count,
+      profile_completion
     } = user;
     
     return {
       id,
+      user_id,
       name,
       profile_photo,
       role,
       is_online,
-      last_seen
+      last_seen,
+      mobile,
+      email,
+      location,
+      shift,
+      documents,
+      attendance_count,
+      profile_completion
     };
   };
 
@@ -117,13 +133,13 @@ const ProfileViewer = ({ userId, onClose }) => {
                 {profile.name}
               </div>
 
-              {/* Role */}
+              {/* Role and User ID */}
               <div style={{
                 fontSize: '14px',
                 color: 'var(--t2)',
-                marginBottom: '20px'
+                marginBottom: '8px'
               }}>
-                {profile.role}
+                {profile.role} • ID: <span style={{ fontFamily: 'monospace', color: 'var(--grn)' }}>{profile.user_id}</span>
               </div>
 
               {/* Online Status */}
@@ -156,9 +172,89 @@ const ProfileViewer = ({ userId, onClose }) => {
                 <div style={{
                   fontSize: '12px',
                   color: 'var(--t3)',
-                  marginBottom: '20px'
+                  marginBottom: '12px'
                 }}>
                   Last seen: {formatLastSeen(profile.last_seen)}
+                </div>
+              )}
+
+              {/* Additional Info Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px',
+                marginBottom: '20px'
+              }}>
+                {profile.mobile && (
+                  <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Phone
+                    </div>
+                    <div style={{ fontSize: '13px' }}>{profile.mobile}</div>
+                  </div>
+                )}
+
+                {profile.email && (
+                  <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Email
+                    </div>
+                    <div style={{ fontSize: '13px' }}>{profile.email}</div>
+                  </div>
+                )}
+
+                {profile.location && (
+                  <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Location
+                    </div>
+                    <div style={{ fontSize: '13px' }}>{profile.location}</div>
+                  </div>
+                )}
+
+                {profile.shift && (
+                  <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Shift
+                    </div>
+                    <div style={{ fontSize: '13px' }}>{profile.shift}</div>
+                  </div>
+                )}
+
+
+              </div>
+
+              {/* Attendance Count */}
+              {profile.attendance_count !== undefined && (
+                <div style={{
+                  background: 'var(--card)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Attendance Records
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--grn)' }}>
+                    {profile.attendance_count}
+                  </div>
+                </div>
+              )}
+
+              {/* Profile Completion */}
+              {profile.profile_completion !== undefined && (
+                <div style={{
+                  background: 'var(--card)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Profile Completion
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--grn)' }}>
+                    {profile.profile_completion}%
+                  </div>
                 </div>
               )}
 

@@ -174,9 +174,9 @@ router.get('/search', authenticateToken, (req, res) => {
     const users = db.prepare(`
       SELECT id, user_id, name, role, mobile, email, profile_photo, is_online, last_seen
       FROM users
-      WHERE (user_id LIKE ? OR name LIKE ?) AND id != ?
+      WHERE (LOWER(user_id) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?) OR LOWER(role) LIKE LOWER(?)) AND id != ?
       LIMIT 20
-    `).all(`%${query}%`, `%${query}%`, req.user.id);
+    `).all(`%${query}%`, `%${query}%`, `%${query}%`, req.user.id);
 
     res.json(users);
   } catch (error) {

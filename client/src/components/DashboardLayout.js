@@ -4,6 +4,7 @@ import Avatar from './Avatar';
 import HierarchyTree from './HierarchyTree';
 import ChatPanel from './ChatPanel';
 import SettingsModal from './SettingsModal';
+import ProfileViewer from './ProfileViewer';
 
 const DashboardLayout = ({ children, onAddUser }) => {
   const { user, logout } = useAuth();
@@ -294,6 +295,7 @@ const SearchUsersModal = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [showProfileViewer, setShowProfileViewer] = useState(null);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
@@ -327,6 +329,10 @@ const SearchUsersModal = ({ onClose }) => {
       console.error('Start chat error:', error);
       alert('Failed to start chat');
     }
+  };
+
+  const handleViewProfile = (userId) => {
+    setShowProfileViewer(userId);
   };
 
   return (
@@ -393,14 +399,24 @@ const SearchUsersModal = ({ onClose }) => {
                         </div>
                       )}
                     </div>
-                    <button
-                      className="btn-s"
-                      onClick={() => handleStartChat(user.id)}
-                      style={{ color: 'var(--grn)', borderColor: 'rgba(0, 200, 83, 0.3)' }}
-                    >
-                      <i className="fa-solid fa-message" style={{ marginRight: '6px' }}></i>
-                      Message
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        className="btn-s btn-sm"
+                        onClick={() => handleStartChat(user.id)}
+                        style={{ color: 'var(--grn)', borderColor: 'rgba(0, 200, 83, 0.3)' }}
+                        title="Send Message"
+                      >
+                        <i className="fa-solid fa-message"></i>
+                      </button>
+                      <button
+                        className="btn-s btn-sm"
+                        onClick={() => handleViewProfile(user.id)}
+                        style={{ color: 'var(--blu)', borderColor: 'rgba(0, 188, 212, 0.3)' }}
+                        title="View Profile"
+                      >
+                        <i className="fa-solid fa-user"></i>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -415,6 +431,14 @@ const SearchUsersModal = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Profile Viewer */}
+      {showProfileViewer && (
+        <ProfileViewer
+          userId={showProfileViewer}
+          onClose={() => setShowProfileViewer(null)}
+        />
+      )}
     </div>
   );
 };
