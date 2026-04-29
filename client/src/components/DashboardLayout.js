@@ -424,7 +424,7 @@ const SearchUsersModal = ({ onClose }) => {
   if (showProfile && selectedUser) {
     return (
       <ProfileViewer
-        user={selectedUser}
+        userId={selectedUser.id}
         onClose={() => {
           setShowProfile(false);
           setSelectedUser(null);

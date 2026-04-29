@@ -67,12 +67,26 @@ router.post('/mark', authenticateToken, upload.single('photo'), (req, res) => {
       }
       
       if (existingAttendance.is_rejected) {
-        // Don't delete - just inform user they need Owner permission to delete
-        return res.status(400).json({ 
-          error: 'Attendance was rejected',
-          message: 'Your previous attendance was rejected. Please contact Owner to delete it before marking new attendance.',
-          rejection_reason: existingAttendance.rejection_reason
-        });
+        // Automatically delete rejected attendance and allow new marking
+        console.log(`Deleting rejected attendance ${existingAttendance.id} for user ${req.user.id}`);
+        
+        // Delete the old photo file
+        const fs = require('fs');
+        const oldAttendance = db.prepare('SELECT photo_path FROM attendance WHERE id = ?').get(existingAttendance.id);
+        if (oldAttendance && oldAttendance.photo_path && fs.existsSync(oldAttendance.photo_path)) {
+          try {
+            fs.unlinkSync(oldAttendance.photo_path);
+            console.log(`Deleted old photo: ${oldAttendance.photo_path}`);
+          } catch (err) {
+            console.error('Failed to delete old photo:', err);
+          }
+        }
+        
+        // Delete the rejected attendance record
+        db.prepare('DELETE FROM attendance WHERE id = ?').run(existingAttendance.id);
+        console.log(`Deleted rejected attendance record ${existingAttendance.id}`);
+        
+        // Continue to mark new attendance below
       } else {
         // If pending (not verified and not rejected)
         return res.status(400).json({ 
@@ -724,6 +738,59 @@ router.delete('/delete/:attendanceId', authenticateToken, authorizeRoles('Owner'
   } catch (error) {
     console.error('Delete attendance error:', error);
     res.status(500).json({ error: 'Failed to delete attendance' });
+  }
+});
+
+// Delete rejected attendance (Guard can delete their own rejected attendance)
+router.delete('/rejected/:attendanceId', authenticateToken, (req, res) => {
+  const { attendanceId } = req.params;
+
+  try {
+    // Get attendance record
+    const attendance = db.prepare('SELECT * FROM attendance WHERE id = ?').get(attendanceId);
+
+    if (!attendance) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    // Check if user owns this attendance or is authorized
+    if (attendance.user_id !== req.user.id && !['Owner', 'Manager', 'Supervisor'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Not authorized to delete this attendance' });
+    }
+
+    // Check if attendance is rejected
+    if (!attendance.is_rejected) {
+      return res.status(400).json({ 
+        error: 'Can only delete rejected attendance',
+        message: 'This attendance is not rejected. Only rejected attendance can be deleted.'
+      });
+    }
+
+    // Delete the attendance record permanently
+    db.prepare('DELETE FROM attendance WHERE id = ?').run(attendanceId);
+
+    // Delete the photo file if exists
+    const fs = require('fs');
+    if (attendance.photo_path && fs.existsSync(attendance.photo_path)) {
+      try {
+        fs.unlinkSync(attendance.photo_path);
+      } catch (err) {
+        console.error('Failed to delete photo file:', err);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Rejected attendance deleted successfully. You can now mark new attendance.',
+      deleted_attendance: {
+        id: attendance.id,
+        marked_at: attendance.marked_at,
+        rejection_reason: attendance.rejection_reason
+      }
+    });
+  } catch (error) {
+    console.error('Delete rejected attendance error:', error);
+    res.status(500).json({ error: 'Failed to delete rejected attendance' });
   }
 });
 
