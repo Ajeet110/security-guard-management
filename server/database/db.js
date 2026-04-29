@@ -151,6 +151,15 @@ const initDatabase = async () => {
     // Column already exists, ignore error
   }
 
+  // Add display_password column to users table if it doesn't exist (migration)
+  try {
+    db.run(`ALTER TABLE users ADD COLUMN display_password TEXT`);
+    console.log('✅ Added display_password column to users table');
+  } catch (err) {
+    // Column already exists, ignore error
+    console.log('ℹ️ display_password column already exists or table not created yet');
+  }
+
   // Create tables
   console.log('🔄 Creating database tables...');
   db.run(`
