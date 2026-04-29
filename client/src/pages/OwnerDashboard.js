@@ -474,16 +474,29 @@ const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Define generatePreview BEFORE useEffect hooks
+  // Define generatePreview to match server-side generation (IST timezone)
   const generatePreview = useCallback(() => {
+    // Match server-side IST generation (UTC+5:30)
     const now = new Date();
-    const id = now.toISOString().replace(/[-:T]/g, '').slice(0, 12);
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istTime = new Date(now.getTime() + istOffset);
+    
+    // Format: YYYYMMDDHHMM (same as server)
+    const year = istTime.getUTCFullYear().toString();
+    const month = (istTime.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = istTime.getUTCDate().toString().padStart(2, '0');
+    const hours = istTime.getUTCHours().toString().padStart(2, '0');
+    const minutes = istTime.getUTCMinutes().toString().padStart(2, '0');
+    
+    const id = year + month + day + hours + minutes;
     setPreviewId(id);
     
+    // Generate password based on last 4 digits of ID
+    const lastFour = id.slice(-4);
     const pwMap = {
-      Manager: `Mgr@${id.slice(-4)}`,
-      Supervisor: `Sup@${id.slice(-4)}`,
-      Guard: `Grd@${id.slice(-4)}`
+      Manager: `Mgr@${lastFour}`,
+      Supervisor: `Sup@${lastFour}`,
+      Guard: `Grd@${lastFour}`
     };
     setPreviewPw(pwMap[formData.role] || '--');
   }, [formData.role]);
@@ -516,9 +529,19 @@ const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
     setLoading(true);
 
     try {
-      await api.post('/users/create', formData);
+      const response = await api.post('/users/create', formData);
       window.dispatchEvent(new CustomEvent('userDataUpdated'));
-      alert(`User ${formData.name} created successfully with ID: ${previewId}`);
+      
+      // Show actual created user details from server response
+      const createdUser = response.data.user;
+      alert(
+        `✅ User created successfully!\n\n` +
+        `Name: ${createdUser.name}\n` +
+        `Role: ${createdUser.role}\n` +
+        `User ID: ${createdUser.user_id}\n` +
+        `Password: ${createdUser.password}\n\n` +
+        `Please note down these credentials.`
+      );
       onClose();
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to create user');
@@ -649,10 +672,11 @@ const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
               background: 'var(--card)',
               borderRadius: '10px',
               padding: '14px',
-              marginBottom: '20px'
+              marginBottom: '20px',
+              border: '1px solid var(--bd)'
             }}>
               <div style={{ fontSize: '11px', color: 'var(--t3)', marginBottom: '4px' }}>
-                Auto-Generated ID
+                Preview ID (Approximate)
               </div>
               <div style={{
                 fontSize: '18px',
@@ -663,7 +687,19 @@ const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
                 {previewId}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '4px' }}>
-                Default Password: <span style={{ color: 'var(--t2)' }}>{previewPw}</span>
+                Preview Password: <span style={{ color: 'var(--t2)', fontFamily: 'monospace' }}>{previewPw}</span>
+              </div>
+              <div style={{ 
+                fontSize: '10px', 
+                color: 'var(--ylw)', 
+                marginTop: '8px',
+                padding: '6px 8px',
+                background: 'rgba(255, 193, 7, 0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(255, 193, 7, 0.3)'
+              }}>
+                <i className="fa-solid fa-info-circle" style={{ marginRight: '4px' }}></i>
+                Actual ID & password will be shown after creation
               </div>
             </div>
 
