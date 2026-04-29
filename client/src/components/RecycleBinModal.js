@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../context/AuthContext';
-import Avatar from './Avatar';
 
 const RecycleBinModal = ({ isOpen, onClose }) => {
   const [deletedItems, setDeletedItems] = useState([]);

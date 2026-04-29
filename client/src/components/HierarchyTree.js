@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../context/AuthContext';
-import Avatar from './Avatar';
+import ProfileViewer from './ProfileViewer';
 
 const HierarchyTree = ({ userId, depth = 0 }) => {
   const [user, setUser] = useState(null);
   const [children, setChildren] = useState([]);
   const [expanded, setExpanded] = useState(true);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchUserAndChildren();
-  }, [userId]);
+  const [showProfile, setShowProfile] = useState(false);
 
   const fetchUserAndChildren = async () => {
     try {
@@ -25,6 +22,21 @@ const HierarchyTree = ({ userId, depth = 0 }) => {
       console.error('Error fetching hierarchy:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserAndChildren();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const handleUserClick = (e) => {
+    // Check if click is on expand/collapse icon
+    if (e.target.closest('.expand-icon')) {
+      setExpanded(!expanded);
+    } else {
+      // Click on user name/row - open profile
+      setShowProfile(true);
     }
   };
 
@@ -48,19 +60,17 @@ const HierarchyTree = ({ userId, depth = 0 }) => {
     <>
       <div 
         className="tree-label"
-        style={{ paddingLeft: `${depth * 8}px` }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setExpanded(!expanded);
-        }}
+        style={{ paddingLeft: `${depth * 8}px`, cursor: 'pointer' }}
+        onClick={handleUserClick}
       >
         <i 
-          className="fa-solid fa-chevron-right" 
+          className="fa-solid fa-chevron-right expand-icon" 
           style={{
             fontSize: '9px',
             color: 'var(--t3)',
             transition: 'transform 0.2s',
-            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)'
+            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            cursor: 'pointer'
           }}
         ></i>
         <i 
@@ -91,6 +101,14 @@ const HierarchyTree = ({ userId, depth = 0 }) => {
             <HierarchyTree key={child.id} userId={child.user_id} depth={depth + 1} />
           ))}
         </div>
+      )}
+
+      {/* Profile Viewer Modal */}
+      {showProfile && (
+        <ProfileViewer
+          userId={user.id}
+          onClose={() => setShowProfile(false)}
+        />
       )}
     </>
   );

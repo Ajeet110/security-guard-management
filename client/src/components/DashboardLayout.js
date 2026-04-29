@@ -390,10 +390,24 @@ const SearchUsersModal = ({ onClose }) => {
     
     setSearching(true);
     try {
+      console.log('Searching for:', query);
       const response = await api.get(`/users/search?query=${encodeURIComponent(query)}`);
-      setSearchResults(response.data);
+      console.log('Search results:', response.data);
+      
+      // Validate that all users have an id field
+      const validResults = response.data.filter(user => {
+        if (!user.id) {
+          console.warn('User missing id field:', user);
+          return false;
+        }
+        return true;
+      });
+      
+      setSearchResults(validResults);
     } catch (error) {
       console.error('Search error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Search failed';
+      alert(`Search error: ${errorMessage}`);
       setSearchResults([]);
     } finally {
       setSearching(false);
@@ -401,6 +415,12 @@ const SearchUsersModal = ({ onClose }) => {
   };
 
   const handleUserClick = (user) => {
+    console.log('Opening profile for user:', user);
+    if (!user || !user.id) {
+      console.error('Invalid user object:', user);
+      alert('Cannot open profile: Invalid user data');
+      return;
+    }
     setSelectedUser(user);
     setShowProfile(true);
   };
@@ -423,17 +443,19 @@ const SearchUsersModal = ({ onClose }) => {
 
   if (showProfile && selectedUser) {
     return (
-      <ProfileViewer
-        userId={selectedUser.id}
-        onClose={() => {
-          setShowProfile(false);
-          setSelectedUser(null);
-        }}
-        onBack={() => {
-          setShowProfile(false);
-          setSelectedUser(null);
-        }}
-      />
+      <div className="modal-bg">
+        <ProfileViewer
+          userId={selectedUser.id}
+          onClose={() => {
+            setShowProfile(false);
+            setSelectedUser(null);
+          }}
+          onBack={() => {
+            setShowProfile(false);
+            setSelectedUser(null);
+          }}
+        />
+      </div>
     );
   }
 
@@ -544,6 +566,9 @@ const SearchUsersModal = ({ onClose }) => {
 const ViewCredentialsModal = ({ onClose }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
 
   React.useEffect(() => {
     fetchCredentials();
@@ -560,6 +585,47 @@ const ViewCredentialsModal = ({ onClose }) => {
     }
   };
 
+  const handleUserClick = (user) => {
+    console.log('Opening profile for user from credentials:', user);
+    if (!user || !user.id) {
+      console.error('Invalid user object:', user);
+      alert('Cannot open profile: Invalid user data');
+      return;
+    }
+    setSelectedUser(user);
+    setShowProfile(true);
+  };
+
+  // Filter users based on search query
+  const filteredUsers = users.filter(user => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      user.name?.toLowerCase().includes(query) ||
+      user.user_id?.toLowerCase().includes(query) ||
+      user.mobile?.toLowerCase().includes(query) ||
+      user.role?.toLowerCase().includes(query)
+    );
+  });
+
+  if (showProfile && selectedUser) {
+    return (
+      <div className="modal-bg">
+        <ProfileViewer
+          userId={selectedUser.id}
+          onClose={() => {
+            setShowProfile(false);
+            setSelectedUser(null);
+          }}
+          onBack={() => {
+            setShowProfile(false);
+            setSelectedUser(null);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="modal-bg" onClick={(e) => e.target.className === 'modal-bg' && onClose()}>
       <div className="modal" style={{ width: '700px', maxWidth: '95vw' }}>
@@ -569,47 +635,83 @@ const ViewCredentialsModal = ({ onClose }) => {
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
-        <div className="modal-body" style={{ padding: 0 }}>
+        <div className="modal-body" style={{ padding: '20px' }}>
+          {/* Search Input */}
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="text"
+              className="finput"
+              placeholder="Search by name, ID, mobile, or role..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <div style={{ fontSize: '12px', color: 'var(--t3)', marginTop: '6px' }}>
+                Found {filteredUsers.length} of {users.length} users
+              </div>
+            )}
+          </div>
+
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--t3)' }}>
               Loading...
             </div>
           ) : (
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>User ID</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Mobile</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.user_id}>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--grn)', fontWeight: 600 }}>
-                      {user.user_id}
-                    </td>
-                    <td>{user.name}</td>
-                    <td>
-                      <span className={`badge ${
-                        user.role === 'Manager' ? 'badge-b' :
-                        user.role === 'Supervisor' ? 'badge-o' : 'badge-g'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '12px', color: 'var(--t2)' }}>
-                      {user.mobile || '-'}
-                    </td>
-                    <td style={{ fontSize: '11px', color: 'var(--t3)' }}>
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Mobile</th>
+                    <th>Created</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--t3)' }}>
+                        {searchQuery ? 'No users found matching your search' : 'No users found'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map(user => (
+                      <tr 
+                        key={user.user_id}
+                        onClick={() => handleUserClick(user)}
+                        style={{ cursor: 'pointer' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '';
+                        }}
+                      >
+                        <td style={{ fontFamily: 'monospace', color: 'var(--grn)', fontWeight: 600 }}>
+                          {user.user_id}
+                        </td>
+                        <td>{user.name}</td>
+                        <td>
+                          <span className={`badge ${
+                            user.role === 'Manager' ? 'badge-b' :
+                            user.role === 'Supervisor' ? 'badge-o' : 'badge-g'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '12px', color: 'var(--t2)' }}>
+                          {user.mobile || '-'}
+                        </td>
+                        <td style={{ fontSize: '11px', color: 'var(--t3)' }}>
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

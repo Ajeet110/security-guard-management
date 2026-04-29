@@ -32,13 +32,9 @@ const io = socketIo(server, {
 // Middleware
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = [
-      process.env.CLIENT_URL || 'http://localhost:3000',
-      'https://security-guard-managemen-d593d.web.app',
-      'https://security-guard-managemen-d593d.firebaseapp.com'
-    ];
+    const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
     // Allow requests with no origin (mobile apps, curl, etc.) or matching origin
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || origin === allowedOrigin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

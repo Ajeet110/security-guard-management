@@ -187,7 +187,6 @@ const GuardDashboard = () => {
   useEffect(() => {
     const checkMonthChange = () => {
       const now = new Date();
-      const currentMonth = now.getMonth();
       
       // Check if month has changed (runs once per day)
       const today = now.toISOString().split('T')[0];

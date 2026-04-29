@@ -6,25 +6,29 @@ const ProfileViewer = ({ userId, onClose }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProfile();
-  }, [userId]);
-
   const loadProfile = async () => {
     setLoading(true);
     try {
+      console.log('Loading profile for userId:', userId);
       const response = await api.get(`/users/profile/${userId}`);
+      console.log('Profile loaded successfully:', response.data);
       // Client-side privacy filter (defense in depth)
       const filteredProfile = filterPrivateData(response.data);
       setProfile(filteredProfile);
     } catch (error) {
       console.error('Load profile error:', error);
-      alert('Failed to load profile');
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to load profile';
+      alert(`Error loading profile: ${errorMessage}`);
       onClose();
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   // Client-side privacy filter - only allow public fields
   const filterPrivateData = (user) => {
