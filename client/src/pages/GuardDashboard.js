@@ -3,6 +3,7 @@ import { useAuth, api } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import Avatar from '../components/Avatar';
 import SettingsModal from '../components/SettingsModal';
+import DraggableContactButton from '../components/DraggableContactButton';
 import { formatTime, formatDate } from '../utils/helpers';
 import { getFileURL } from '../config/api';
 
@@ -1664,43 +1665,8 @@ const GuardDashboard = () => {
         </div>
       )}
 
-      {/* Floating Contact Developer Button */}
-      <a
-        href="https://www.instagram.com/ajeet_up82?igsh=cGNyejJldWN3M3V5"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          position: 'fixed',
-          bottom: window.innerWidth <= 768 ? '140px' : '80px', // Higher on mobile to avoid chat input
-          right: '20px',
-          padding: '10px 16px',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 600,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          cursor: 'pointer',
-          zIndex: 9999,
-          textDecoration: 'none',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          whiteSpace: 'nowrap'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        }}
-        title="Contact Developer on Instagram"
-      >
-        Contact Developer
-      </a>
+      {/* Draggable Floating Contact Developer Button */}
+      <DraggableContactButton />
     </div>
   );
 };

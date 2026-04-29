@@ -14,6 +14,7 @@ const attendanceRoutes = require('./routes/attendance');
 const documentRoutes = require('./routes/documents');
 const managementRoutes = require('./routes/management');
 const { router: groupsRoutes } = require('./routes/groups');
+const recycleBinRoutes = require('./routes/recycleBin');
 const socketHandler = require('./socket/socketHandler');
 const { authenticateToken } = require('./middleware/auth');
 const { fileAccessControl } = require('./middleware/fileAccess');
@@ -65,6 +66,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/management', managementRoutes);
 app.use('/api/groups', groupsRoutes);
+app.use('/api/recycle-bin', recycleBinRoutes);
 
 // Socket.io
 socketHandler(io);

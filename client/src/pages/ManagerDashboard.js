@@ -6,6 +6,8 @@ import Avatar from '../components/Avatar';
 import UserManagementModal from '../components/UserManagementModal';
 import SettingsModal from '../components/SettingsModal';
 import AttendanceDashboard from '../components/AttendanceDashboard';
+import RecycleBinModal from '../components/RecycleBinModal';
+import DraggableContactButton from '../components/DraggableContactButton';
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -27,6 +29,7 @@ const ManagerDashboard = () => {
   const [chatConversationId, setChatConversationId] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [showSettings, setShowSettings] = useState(false);
+  const [showRecycleBin, setShowRecycleBin] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -116,14 +119,24 @@ const ManagerDashboard = () => {
           </p>
         </div>
         {!isMobile && (
-          <button
-            className="btn-s"
-            onClick={() => setShowSettings(true)}
-            style={{ color: 'var(--blu)', borderColor: 'rgba(33, 150, 243, 0.3)' }}
-          >
-            <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
-            Settings
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn-s"
+              onClick={() => setShowRecycleBin(true)}
+              style={{ color: 'var(--red)', borderColor: 'rgba(255, 82, 82, 0.3)' }}
+            >
+              <i className="fa-solid fa-trash-can-arrow-up" style={{ marginRight: '6px' }}></i>
+              Recycle Bin
+            </button>
+            <button
+              className="btn-s"
+              onClick={() => setShowSettings(true)}
+              style={{ color: 'var(--blu)', borderColor: 'rgba(33, 150, 243, 0.3)' }}
+            >
+              <i className="fa-solid fa-gear" style={{ marginRight: '6px' }}></i>
+              Settings
+            </button>
+          </div>
         )}
       </div>
 
@@ -338,9 +351,17 @@ const ManagerDashboard = () => {
             {activeTab === 'reports' && (
               <div style={{ padding: '20px' }}>
                 <h3 style={{ marginBottom: '16px' }}>Reports & Analytics</h3>
-                <div style={{ fontSize: '14px', color: 'var(--t2)' }}>
+                <div style={{ fontSize: '14px', color: 'var(--t2)', marginBottom: '12px' }}>
                   View attendance reports and team analytics
                 </div>
+                <button
+                  className="btn-s"
+                  onClick={() => setShowRecycleBin(true)}
+                  style={{ width: '100%', color: 'var(--red)', borderColor: 'rgba(255, 82, 82, 0.3)' }}
+                >
+                  <i className="fa-solid fa-trash-can-arrow-up" style={{ marginRight: '8px' }}></i>
+                  Recycle Bin
+                </button>
               </div>
             )}
           </div>
@@ -417,6 +438,16 @@ const ManagerDashboard = () => {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      {showRecycleBin && (
+        <RecycleBinModal
+          isOpen={showRecycleBin}
+          onClose={() => setShowRecycleBin(false)}
+        />
+      )}
+
+      {/* Draggable Floating Contact Developer Button */}
+      <DraggableContactButton />
     </DashboardLayout>
   );
 };
@@ -623,40 +654,10 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, visiblePasswor
 
             <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '12px', gridColumn: '1 / -1' }}>
               <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Password
+                Security
               </div>
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <div style={{ 
-                  fontSize: '16px', 
-                  fontWeight: 600, 
-                  color: 'var(--grn)',
-                  fontFamily: 'monospace',
-                  letterSpacing: '1px'
-                }}>
-                  {visiblePasswords[user.id] ? (user.display_password || 'Not available') : '••••••'}
-                </div>
-                <button
-                  onClick={() => togglePasswordVisibility(user.id)}
-                  style={{
-                    background: 'var(--bg2)',
-                    border: '1px solid var(--bd)',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
-                    color: 'var(--t2)',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <i className={`fa-solid fa-eye${visiblePasswords[user.id] ? '-slash' : ''}`}></i>
-                  {visiblePasswords[user.id] ? 'Hide' : 'Show'}
-                </button>
+              <div style={{ fontSize: '12px', color: 'var(--t2)' }}>
+                Password is only shown once during user creation for security reasons
               </div>
             </div>
           </div>
@@ -1058,44 +1059,6 @@ const AddUserModal = ({ onClose, selectedRole: propSelectedRole }) => {
           </form>
         </div>
       </div>
-
-      {/* Floating Contact Developer Button */}
-      <a
-        href="https://www.instagram.com/ajeet_up82?igsh=cGNyejJldWN3M3V5"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          position: 'fixed',
-          bottom: window.innerWidth <= 768 ? '80px' : '20px', // Higher on mobile to avoid navbar
-          right: '20px',
-          padding: '10px 16px',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 600,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          cursor: 'pointer',
-          zIndex: 9999,
-          textDecoration: 'none',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          whiteSpace: 'nowrap'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        }}
-        title="Contact Developer on Instagram"
-      >
-        Contact Developer
-      </a>
     </div>
   );
 };

@@ -360,6 +360,21 @@ const initDatabase = async () => {
     )
   `);
 
+  // Create deleted_items table for recycle bin functionality
+  db.run(`
+    CREATE TABLE IF NOT EXISTS deleted_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_type TEXT NOT NULL CHECK(item_type IN ('user', 'attendance', 'document')),
+      item_id INTEGER NOT NULL,
+      item_data TEXT NOT NULL,
+      deleted_by INTEGER NOT NULL,
+      deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      auto_delete_at DATETIME NOT NULL,
+      FOREIGN KEY (deleted_by) REFERENCES users(id)
+    )
+  `);
+  console.log('✅ Deleted items (recycle bin) table created/verified');
+
   // Create owner account if not exists
   console.log('🔄 Checking for owner account...');
   const ownerCheck = db.prepare("SELECT * FROM users WHERE user_id = ?");

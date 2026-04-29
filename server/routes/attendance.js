@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const { db } = require('../database/db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const { getLocalTimestamp, getLocalDate, getISTTimestamp } = require('../utils/dateUtils');
 
 const router = express.Router();
@@ -62,14 +62,17 @@ router.post('/mark', authenticateToken, upload.single('photo'), (req, res) => {
       if (existingAttendance.is_verified) {
         return res.status(400).json({ 
           error: 'Attendance already verified',
-          message: 'Your attendance has been verified for today' 
+          message: 'Your attendance has been verified for today. Cannot mark again.' 
         });
       }
       
       if (existingAttendance.is_rejected) {
-        // Delete old rejected record to allow re-upload
-        db.prepare('DELETE FROM attendance WHERE id = ?').run(existingAttendance.id);
-        // Continue to insert new record (don't return error)
+        // Don't delete - just inform user they need Owner permission to delete
+        return res.status(400).json({ 
+          error: 'Attendance was rejected',
+          message: 'Your previous attendance was rejected. Please contact Owner to delete it before marking new attendance.',
+          rejection_reason: existingAttendance.rejection_reason
+        });
       } else {
         // If pending (not verified and not rejected)
         return res.status(400).json({ 
@@ -678,6 +681,45 @@ router.post('/reject-all', authenticateToken, (req, res) => {
   } catch (error) {
     console.error('Reject all error:', error);
     res.status(500).json({ error: 'Failed to reject all attendance' });
+  }
+});
+
+// Delete attendance record - Move to recycle bin (Owner, Manager, Supervisor can delete)
+router.delete('/delete/:attendanceId', authenticateToken, authorizeRoles('Owner', 'Manager', 'Supervisor'), (req, res) => {
+  try {
+    const attendance = db.prepare('SELECT * FROM attendance WHERE id = ?').get(req.params.attendanceId);
+    
+    if (!attendance) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    // Move to recycle bin instead of permanent delete
+    const autoDeleteDate = new Date();
+    autoDeleteDate.setDate(autoDeleteDate.getDate() + 30); // Auto-delete after 30 days
+
+    db.prepare(`
+      INSERT INTO deleted_items (item_type, item_id, item_data, deleted_by, auto_delete_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      'attendance',
+      attendance.id,
+      JSON.stringify(attendance),
+      req.user.id,
+      autoDeleteDate.toISOString()
+    );
+
+    // Delete the attendance record
+    db.prepare('DELETE FROM attendance WHERE id = ?').run(req.params.attendanceId);
+
+    res.json({ 
+      message: 'Attendance record moved to recycle bin',
+      deleted_by: req.user.name,
+      auto_delete_in_days: 30,
+      note: 'Can be recovered from recycle bin within 30 days'
+    });
+  } catch (error) {
+    console.error('Delete attendance error:', error);
+    res.status(500).json({ error: 'Failed to delete attendance' });
   }
 });
 

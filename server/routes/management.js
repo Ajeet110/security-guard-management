@@ -100,7 +100,7 @@ router.put('/user/:userId/transfer', authenticateToken, authorizeRoles('Owner', 
   }
 });
 
-// Delete user
+// Delete user - Move to recycle bin (Owner, Manager, Supervisor can delete)
 router.delete('/user/:userId', authenticateToken, authorizeRoles('Owner', 'Manager', 'Supervisor'), (req, res) => {
   const { userId } = req.params;
 
@@ -113,10 +113,10 @@ router.delete('/user/:userId', authenticateToken, authorizeRoles('Owner', 'Manag
 
     // Cannot delete owner
     if (targetUser.role === 'Owner') {
-      return res.status(403).json({ error: 'Cannot delete Owner' });
+      return res.status(403).json({ error: 'Cannot delete Owner account' });
     }
 
-    // Permission check
+    // Permission check for Manager and Supervisor
     if (req.user.role === 'Supervisor' && targetUser.role !== 'Guard') {
       return res.status(403).json({ error: 'Supervisors can only delete Guards' });
     }
@@ -134,13 +134,33 @@ router.delete('/user/:userId', authenticateToken, authorizeRoles('Owner', 'Manag
       });
     }
 
-    // Delete user
+    // Move to recycle bin instead of permanent delete
+    const autoDeleteDate = new Date();
+    autoDeleteDate.setDate(autoDeleteDate.getDate() + 30); // Auto-delete after 30 days
+
+    db.prepare(`
+      INSERT INTO deleted_items (item_type, item_id, item_data, deleted_by, auto_delete_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      'user',
+      targetUser.id,
+      JSON.stringify(targetUser),
+      req.user.id,
+      autoDeleteDate.toISOString()
+    );
+
+    // Delete from users table
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
 
     // Remove from role-based groups
     removeUserFromRoleGroups(userId, targetUser.role);
 
-    res.json({ message: `${targetUser.role} deleted successfully` });
+    res.json({ 
+      message: `${targetUser.role} moved to recycle bin`,
+      deleted_by: req.user.name,
+      auto_delete_in_days: 30,
+      note: 'Can be recovered from recycle bin within 30 days'
+    });
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user' });

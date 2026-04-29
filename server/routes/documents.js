@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const { db } = require('../database/db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const { getISTTimestamp } = require('../utils/dateUtils');
 
 const router = express.Router();
@@ -99,6 +99,7 @@ router.post('/verify/:documentId', authenticateToken, (req, res) => {
 });
 
 // Reject document (Manager/Supervisor/Owner only)
+// Note: This marks as rejected but does NOT delete - only Owner can delete
 router.post('/reject/:documentId', authenticateToken, (req, res) => {
   if (req.user.role === 'Guard') {
     return res.status(403).json({ error: 'Access denied' });
@@ -113,7 +114,7 @@ router.post('/reject/:documentId', authenticateToken, (req, res) => {
   try {
     console.log('Rejecting document ID:', req.params.documentId);
     
-    // Get document info before deleting
+    // Get document info
     const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.documentId);
     
     console.log('Found document:', document);
@@ -122,35 +123,60 @@ router.post('/reject/:documentId', authenticateToken, (req, res) => {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    // Delete the document record from database
-    db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.documentId);
-
-    // Optionally delete the physical file
-    const fs = require('fs');
-    const path = require('path');
-    const filePath = path.join(__dirname, '..', '..', document.file_path);
-    
-    console.log('Deleting file at:', filePath);
-    
-    if (fs.existsSync(filePath)) {
-      try {
-        fs.unlinkSync(filePath);
-        console.log('File deleted successfully');
-      } catch (err) {
-        console.error('Error deleting file:', err);
-        // Continue even if file deletion fails
-      }
-    } else {
-      console.log('File does not exist:', filePath);
-    }
+    // Mark as rejected instead of deleting
+    db.prepare(`
+      UPDATE documents 
+      SET is_rejected = 1, rejection_reason = ?, is_verified = 0 
+      WHERE id = ?
+    `).run(reason, req.params.documentId);
 
     res.json({ 
-      message: 'Document rejected and deleted successfully',
-      reason: reason 
+      message: 'Document marked as rejected',
+      reason: reason,
+      note: 'Document not deleted - only Owner can permanently delete documents'
     });
   } catch (error) {
     console.error('Reject document error:', error);
     res.status(500).json({ error: 'Failed to reject document' });
+  }
+});
+
+// Delete document permanently - Move to recycle bin (Owner, Manager, Supervisor can delete)
+router.delete('/delete/:documentId', authenticateToken, authorizeRoles('Owner', 'Manager', 'Supervisor'), (req, res) => {
+  try {
+    const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.documentId);
+    
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Move to recycle bin instead of permanent delete
+    const autoDeleteDate = new Date();
+    autoDeleteDate.setDate(autoDeleteDate.getDate() + 30); // Auto-delete after 30 days
+
+    db.prepare(`
+      INSERT INTO deleted_items (item_type, item_id, item_data, deleted_by, auto_delete_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      'document',
+      document.id,
+      JSON.stringify(document),
+      req.user.id,
+      autoDeleteDate.toISOString()
+    );
+
+    // Delete the document record from database
+    db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.documentId);
+
+    res.json({ 
+      message: 'Document moved to recycle bin',
+      deleted_by: req.user.name,
+      auto_delete_in_days: 30,
+      note: 'Can be recovered from recycle bin within 30 days'
+    });
+  } catch (error) {
+    console.error('Delete document error:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
   }
 });
 
