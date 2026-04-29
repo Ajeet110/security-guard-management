@@ -5,11 +5,14 @@ const bcrypt = require('bcryptjs');
 
 let db = null;
 // Use environment variable or default path
+// On Render, DATABASE_URL should be a file path like /opt/render/project/src/database/secureguard.db
 const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'secureguard.db');
 
 // Helper to ensure database directory exists
 const ensureDbDirExists = () => {
   const dbDir = path.dirname(dbPath);
+  console.log(`📂 Checking database directory: ${dbDir}`);
+  
   if (!fs.existsSync(dbDir)) {
     try {
       fs.mkdirSync(dbDir, { recursive: true });
@@ -20,6 +23,8 @@ const ensureDbDirExists = () => {
       return false;
     }
   }
+  
+  console.log(`✅ Database directory exists: ${dbDir}`);
   return true;
 };
 
@@ -76,91 +81,7 @@ const initDatabase = async () => {
   db = new SQL.Database(buffer);
   console.log('✅ Database instance created successfully');
 
-  // Add display_password column if it doesn't exist (migration)
-  try {
-    db.run(`ALTER TABLE users ADD COLUMN display_password TEXT`);
-    console.log('✅ Added display_password column');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  // Add rejection columns to documents table if they don't exist (migration)
-  try {
-    db.run(`ALTER TABLE documents ADD COLUMN is_rejected INTEGER DEFAULT 0`);
-    console.log('✅ Added is_rejected column to documents');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  try {
-    db.run(`ALTER TABLE documents ADD COLUMN rejection_reason TEXT`);
-    console.log('✅ Added rejection_reason column to documents');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  // Add description column to conversations table (migration)
-  try {
-    db.run(`ALTER TABLE conversations ADD COLUMN description TEXT`);
-    console.log('✅ Added description column to conversations');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  // Add updated_at column to conversations table (migration)
-  try {
-    db.run(`ALTER TABLE conversations ADD COLUMN updated_at DATETIME`);
-    console.log('✅ Added updated_at column to conversations');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  // Add verification columns to attendance table if they don't exist (migration)
-  try {
-    db.run(`ALTER TABLE attendance ADD COLUMN is_verified INTEGER DEFAULT 0`);
-    console.log('✅ Added is_verified column to attendance');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  try {
-    db.run(`ALTER TABLE attendance ADD COLUMN is_rejected INTEGER DEFAULT 0`);
-    console.log('✅ Added is_rejected column to attendance');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  try {
-    db.run(`ALTER TABLE attendance ADD COLUMN rejection_reason TEXT`);
-    console.log('✅ Added rejection_reason column to attendance');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  try {
-    db.run(`ALTER TABLE attendance ADD COLUMN verified_by INTEGER`);
-    console.log('✅ Added verified_by column to attendance');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  try {
-    db.run(`ALTER TABLE attendance ADD COLUMN verified_at DATETIME`);
-    console.log('✅ Added verified_at column to attendance');
-  } catch (err) {
-    // Column already exists, ignore error
-  }
-
-  // Add display_password column to users table if it doesn't exist (migration)
-  try {
-    db.run(`ALTER TABLE users ADD COLUMN display_password TEXT`);
-    console.log('✅ Added display_password column to users table');
-  } catch (err) {
-    // Column already exists, ignore error
-    console.log('ℹ️ display_password column already exists or table not created yet');
-  }
-
-  // Create tables
+  // Create tables FIRST before running migrations
   console.log('🔄 Creating database tables...');
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -386,6 +307,87 @@ const initDatabase = async () => {
   `);
   console.log('✅ Deleted items (recycle bin) table created/verified');
 
+  // Run migrations AFTER tables are created
+  console.log('🔄 Running database migrations...');
+  
+  // Add display_password column if it doesn't exist (migration)
+  try {
+    db.run(`ALTER TABLE users ADD COLUMN display_password TEXT`);
+    console.log('✅ Added display_password column');
+  } catch (err) {
+    // Column already exists, ignore error
+    console.log('ℹ️ display_password column already exists');
+  }
+
+  // Add rejection columns to documents table if they don't exist (migration)
+  try {
+    db.run(`ALTER TABLE documents ADD COLUMN is_rejected INTEGER DEFAULT 0`);
+    console.log('✅ Added is_rejected column to documents');
+  } catch (err) {
+    console.log('ℹ️ is_rejected column already exists in documents');
+  }
+
+  try {
+    db.run(`ALTER TABLE documents ADD COLUMN rejection_reason TEXT`);
+    console.log('✅ Added rejection_reason column to documents');
+  } catch (err) {
+    console.log('ℹ️ rejection_reason column already exists in documents');
+  }
+
+  // Add description column to conversations table (migration)
+  try {
+    db.run(`ALTER TABLE conversations ADD COLUMN description TEXT`);
+    console.log('✅ Added description column to conversations');
+  } catch (err) {
+    console.log('ℹ️ description column already exists in conversations');
+  }
+
+  // Add updated_at column to conversations table (migration)
+  try {
+    db.run(`ALTER TABLE conversations ADD COLUMN updated_at DATETIME`);
+    console.log('✅ Added updated_at column to conversations');
+  } catch (err) {
+    console.log('ℹ️ updated_at column already exists in conversations');
+  }
+
+  // Add verification columns to attendance table if they don't exist (migration)
+  try {
+    db.run(`ALTER TABLE attendance ADD COLUMN is_verified INTEGER DEFAULT 0`);
+    console.log('✅ Added is_verified column to attendance');
+  } catch (err) {
+    console.log('ℹ️ is_verified column already exists in attendance');
+  }
+
+  try {
+    db.run(`ALTER TABLE attendance ADD COLUMN is_rejected INTEGER DEFAULT 0`);
+    console.log('✅ Added is_rejected column to attendance');
+  } catch (err) {
+    console.log('ℹ️ is_rejected column already exists in attendance');
+  }
+
+  try {
+    db.run(`ALTER TABLE attendance ADD COLUMN rejection_reason TEXT`);
+    console.log('✅ Added rejection_reason column to attendance');
+  } catch (err) {
+    console.log('ℹ️ rejection_reason column already exists in attendance');
+  }
+
+  try {
+    db.run(`ALTER TABLE attendance ADD COLUMN verified_by INTEGER`);
+    console.log('✅ Added verified_by column to attendance');
+  } catch (err) {
+    console.log('ℹ️ verified_by column already exists in attendance');
+  }
+
+  try {
+    db.run(`ALTER TABLE attendance ADD COLUMN verified_at DATETIME`);
+    console.log('✅ Added verified_at column to attendance');
+  } catch (err) {
+    console.log('ℹ️ verified_at column already exists in attendance');
+  }
+
+  console.log('✅ Database migrations completed');
+
   // Create owner account if not exists
   console.log('🔄 Checking for owner account...');
   const ownerCheck = db.prepare("SELECT * FROM users WHERE user_id = ?");
@@ -397,126 +399,40 @@ const initDatabase = async () => {
     console.log('🔄 Creating owner account...');
     const hashedPassword = bcrypt.hashSync('owner123', 10);
     const stmt = db.prepare(
-      "INSERT INTO users (user_id, password, name, role, created_by) VALUES (?, ?, ?, ?, NULL)"
+      "INSERT INTO users (user_id, password, display_password, name, role, created_by) VALUES (?, ?, ?, ?, ?, NULL)"
     );
-    stmt.bind(['2026', hashedPassword, 'System Owner', 'Owner']);
+    stmt.bind(['2026', hashedPassword, 'owner123', 'System Owner', 'Owner']);
     stmt.step();
     stmt.free();
     saveDatabase();
     console.log('✅ Owner account created - ID: 2026, Password: owner123');
   } else {
     console.log('ℹ️ Owner account already exists');
+    
+    // Update existing owner account to have display_password if missing
+    try {
+      const ownerData = db.prepare("SELECT display_password FROM users WHERE user_id = '2026'");
+      ownerData.bind([]);
+      ownerData.step();
+      const result = ownerData.get();
+      ownerData.free();
+      
+      if (!result || !result[0]) {
+        console.log('🔄 Updating owner account with display_password...');
+        const updateStmt = db.prepare("UPDATE users SET display_password = ? WHERE user_id = ?");
+        updateStmt.bind(['owner123', '2026']);
+        updateStmt.step();
+        updateStmt.free();
+        saveDatabase();
+        console.log('✅ Owner account updated with display_password');
+      }
+    } catch (err) {
+      console.log('ℹ️ Owner display_password update not needed');
+    }
   }
 
-  // Remove display_password column for security (if it exists)
-  try {
-    // Check if display_password column exists
-    const tableInfo = db.prepare("PRAGMA table_info(users)");
-    const columns = [];
-    while (tableInfo.step()) {
-      const values = tableInfo.get();
-      columns.push(values[1]); // Column name is at index 1
-    }
-    tableInfo.free();
-
-    if (columns.includes('display_password')) {
-      console.log('🔄 Removing insecure display_password column...');
-      
-      // Get existing data without display_password
-      const existingUsers = [];
-      const selectStmt = db.prepare("SELECT id, user_id, password, name, role, parent_id, mobile, email, location, shift, profile_photo, created_by, created_at, last_seen, is_online FROM users");
-      
-      while (selectStmt.step()) {
-        const values = selectStmt.get();
-        existingUsers.push({
-          id: values[0],
-          user_id: values[1],
-          password: values[2],
-          name: values[3],
-          role: values[4],
-          parent_id: values[5],
-          mobile: values[6],
-          email: values[7],
-          location: values[8],
-          shift: values[9],
-          profile_photo: values[10],
-          created_by: values[11],
-          created_at: values[12],
-          last_seen: values[13],
-          is_online: values[14]
-        });
-      }
-      selectStmt.free();
-      
-      // Drop old table and recreate without display_password
-      db.run("DROP TABLE IF EXISTS users_old");
-      db.run("ALTER TABLE users RENAME TO users_old");
-      
-      // Create new users table without display_password
-      db.run(`
-        CREATE TABLE users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_id TEXT UNIQUE NOT NULL,
-          password TEXT NOT NULL,
-          name TEXT NOT NULL,
-          role TEXT NOT NULL CHECK(role IN ('Owner', 'Manager', 'Supervisor', 'Guard')),
-          parent_id INTEGER,
-          mobile TEXT,
-          email TEXT,
-          location TEXT,
-          shift TEXT,
-          profile_photo TEXT,
-          created_by INTEGER,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          last_seen DATETIME,
-          is_online INTEGER DEFAULT 0,
-          FOREIGN KEY (parent_id) REFERENCES users(id),
-          FOREIGN KEY (created_by) REFERENCES users(id)
-        )
-      `);
-      
-      // Restore data
-      if (existingUsers.length > 0) {
-        const insertStmt = db.prepare(`
-          INSERT INTO users (id, user_id, password, name, role, parent_id, mobile, email, location, shift, profile_photo, created_by, created_at, last_seen, is_online)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        
-        existingUsers.forEach(user => {
-          insertStmt.bind([
-            user.id,
-            user.user_id,
-            user.password,
-            user.name,
-            user.role,
-            user.parent_id,
-            user.mobile,
-            user.email,
-            user.location,
-            user.shift,
-            user.profile_photo,
-            user.created_by,
-            user.created_at,
-            user.last_seen,
-            user.is_online
-          ]);
-          insertStmt.step();
-          insertStmt.reset();
-        });
-        insertStmt.free();
-        
-        console.log(`✅ Migrated ${existingUsers.length} users without display_password`);
-      }
-      
-      // Drop old table
-      db.run("DROP TABLE IF EXISTS users_old");
-      
-      saveDatabase();
-      console.log('✅ Removed insecure display_password column');
-    }
-  } catch (err) {
-    console.log('ℹ️ display_password column migration not needed or already completed');
-  }
+  // display_password column is kept for admin password viewing functionality
+  // Migration to add display_password is handled at line 81 above
 
   // Create indexes for performance optimization
   try {
@@ -560,11 +476,26 @@ const saveDatabase = () => {
   if (db) {
     try {
       const data = db.export();
+      const dbDir = path.dirname(dbPath);
+      
+      // Ensure directory exists before saving
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+        console.log(`📁 Created database directory for save: ${dbDir}`);
+      }
+      
       fs.writeFileSync(dbPath, data);
       console.log(`💾 Database saved successfully to: ${dbPath} (${data.length} bytes)`);
+      return true;
     } catch (error) {
       console.error('❌ Failed to save database:', error.message);
+      console.error('❌ Database path:', dbPath);
+      console.error('❌ Error stack:', error.stack);
+      return false;
     }
+  } else {
+    console.error('❌ Cannot save database: db is null');
+    return false;
   }
 };
 

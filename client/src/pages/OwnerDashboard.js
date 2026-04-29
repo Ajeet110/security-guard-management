@@ -96,6 +96,35 @@ const OwnerDashboard = () => {
     }));
   };
 
+  const handleDeleteAllRole = async (role) => {
+    const roleUsers = allUsers.filter(u => u.role === role);
+    
+    if (roleUsers.length === 0) {
+      alert(`No ${role}s found to delete`);
+      return;
+    }
+
+    const confirmMessage = `⚠️ WARNING: This will permanently delete ALL ${roleUsers.length} ${role}(s) and their related data:\n\n` +
+      roleUsers.map(u => `• ${u.name} (${u.user_id})`).join('\n') +
+      `\n\nThis action CANNOT be undone!\n\nType "DELETE ALL ${role.toUpperCase()}S" to confirm:`;
+    
+    const userInput = prompt(confirmMessage);
+    
+    if (userInput !== `DELETE ALL ${role.toUpperCase()}S`) {
+      alert('Deletion cancelled - confirmation text did not match');
+      return;
+    }
+
+    try {
+      const response = await api.delete(`/users/delete-all/${role}`);
+      alert(`✅ ${response.data.message}\n\nDeleted ${response.data.deleted_count} users:\n${response.data.deleted_users.join(', ')}`);
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Delete all error:', error);
+      alert(error.response?.data?.error || 'Failed to delete users');
+    }
+  };
+
   // Check if mobile view
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
@@ -168,26 +197,46 @@ const OwnerDashboard = () => {
         >
           <div className="lbl">
             <span>Total Managers</span>
-            <button 
-              className="btn-icon btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedRole('Manager');
-                setShowAddUser(true);
-              }}
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                width: '28px',
-                height: '28px',
-                fontSize: '12px',
-                background: 'rgba(59, 130, 246, 0.2)',
-                borderColor: 'rgba(59, 130, 246, 0.3)'
-              }}
-            >
-              <i className="fa-solid fa-plus"></i>
-            </button>
+            <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
+              <button 
+                className="btn-icon btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedRole('Manager');
+                  setShowAddUser(true);
+                }}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  fontSize: '12px',
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  borderColor: 'rgba(59, 130, 246, 0.3)'
+                }}
+                title="Add Manager"
+              >
+                <i className="fa-solid fa-plus"></i>
+              </button>
+              {stats.managers > 0 && (
+                <button 
+                  className="btn-icon btn-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAllRole('Manager');
+                  }}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    fontSize: '12px',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    color: 'var(--red)'
+                  }}
+                  title="Delete All Managers"
+                >
+                  <i className="fa-solid fa-trash"></i>
+                </button>
+              )}
+            </div>
           </div>
           <div className="num" style={{ color: 'var(--blu)' }}>{stats.managers}</div>
           <i className="fa-solid fa-briefcase ico" style={{ color: 'var(--blu)' }}></i>
@@ -199,26 +248,46 @@ const OwnerDashboard = () => {
         >
           <div className="lbl">
             <span>Total Supervisors</span>
-            <button 
-              className="btn-icon btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedRole('Supervisor');
-                setShowAddUser(true);
-              }}
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                width: '28px',
-                height: '28px',
-                fontSize: '12px',
-                background: 'rgba(245, 158, 11, 0.2)',
-                borderColor: 'rgba(245, 158, 11, 0.3)'
-              }}
-            >
-              <i className="fa-solid fa-plus"></i>
-            </button>
+            <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
+              <button 
+                className="btn-icon btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedRole('Supervisor');
+                  setShowAddUser(true);
+                }}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  fontSize: '12px',
+                  background: 'rgba(245, 158, 11, 0.2)',
+                  borderColor: 'rgba(245, 158, 11, 0.3)'
+                }}
+                title="Add Supervisor"
+              >
+                <i className="fa-solid fa-plus"></i>
+              </button>
+              {stats.supervisors > 0 && (
+                <button 
+                  className="btn-icon btn-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAllRole('Supervisor');
+                  }}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    fontSize: '12px',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    color: 'var(--red)'
+                  }}
+                  title="Delete All Supervisors"
+                >
+                  <i className="fa-solid fa-trash"></i>
+                </button>
+              )}
+            </div>
           </div>
           <div className="num" style={{ color: 'var(--ylw)' }}>{stats.supervisors}</div>
           <i className="fa-solid fa-hard-hat ico" style={{ color: 'var(--ylw)' }}></i>
@@ -230,26 +299,46 @@ const OwnerDashboard = () => {
         >
           <div className="lbl">
             <span>Total Guards</span>
-            <button 
-              className="btn-icon btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedRole('Guard');
-                setShowAddUser(true);
-              }}
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                width: '28px',
-                height: '28px',
-                fontSize: '12px',
-                background: 'rgba(16, 185, 129, 0.2)',
-                borderColor: 'rgba(16, 185, 129, 0.3)'
-              }}
-            >
-              <i className="fa-solid fa-plus"></i>
-            </button>
+            <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
+              <button 
+                className="btn-icon btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedRole('Guard');
+                  setShowAddUser(true);
+                }}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  fontSize: '12px',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  borderColor: 'rgba(16, 185, 129, 0.3)'
+                }}
+                title="Add Guard"
+              >
+                <i className="fa-solid fa-plus"></i>
+              </button>
+              {stats.guards > 0 && (
+                <button 
+                  className="btn-icon btn-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAllRole('Guard');
+                  }}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    fontSize: '12px',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    color: 'var(--red)'
+                  }}
+                  title="Delete All Guards"
+                >
+                  <i className="fa-solid fa-trash"></i>
+                </button>
+              )}
+            </div>
           </div>
           <div className="num" style={{ color: 'var(--grn)' }}>{stats.guards}</div>
           <i className="fa-solid fa-shield ico" style={{ color: 'var(--grn)' }}></i>

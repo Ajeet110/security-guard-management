@@ -452,4 +452,61 @@ router.post('/update-profile', authenticateToken, (req, res) => {
   }
 });
 
+// Delete all users of a specific role (Owner only)
+router.delete('/delete-all/:role', authenticateToken, authorizeRoles('Owner'), (req, res) => {
+  const { role } = req.params;
+  
+  // Validate role
+  if (!['Manager', 'Supervisor', 'Guard'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Must be Manager, Supervisor, or Guard' });
+  }
+
+  try {
+    // Get all users of this role
+    const usersToDelete = db.prepare('SELECT id, name FROM users WHERE role = ?').all(role);
+    
+    if (usersToDelete.length === 0) {
+      return res.json({ 
+        message: `No ${role}s found to delete`,
+        deleted_count: 0
+      });
+    }
+
+    // Confirm deletion
+    const userIds = usersToDelete.map(u => u.id);
+    const placeholders = userIds.map(() => '?').join(',');
+
+    // Delete related data first
+    // Delete documents
+    db.prepare(`DELETE FROM documents WHERE user_id IN (${placeholders})`).run(...userIds);
+    
+    // Delete attendance records
+    db.prepare(`DELETE FROM attendance WHERE user_id IN (${placeholders})`).run(...userIds);
+    
+    // Delete messages sent by these users
+    db.prepare(`DELETE FROM messages WHERE sender_id IN (${placeholders})`).run(...userIds);
+    
+    // Delete message status for these users
+    db.prepare(`DELETE FROM message_status WHERE user_id IN (${placeholders})`).run(...userIds);
+    
+    // Delete conversation participants
+    db.prepare(`DELETE FROM conversation_participants WHERE user_id IN (${placeholders})`).run(...userIds);
+    
+    // Delete refresh tokens
+    db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${placeholders})`).run(...userIds);
+    
+    // Finally delete the users
+    db.prepare(`DELETE FROM users WHERE role = ?`).run(role);
+
+    res.json({ 
+      message: `Successfully deleted all ${role}s`,
+      deleted_count: usersToDelete.length,
+      deleted_users: usersToDelete.map(u => u.name)
+    });
+  } catch (error) {
+    console.error('Delete all users error:', error);
+    res.status(500).json({ error: 'Failed to delete users' });
+  }
+});
+
 module.exports = router;
