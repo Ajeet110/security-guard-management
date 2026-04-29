@@ -1,0 +1,34 @@
+# Ignore client folder (deployed separately on Firebase)
+client/
+
+# Ignore Firebase files
+.firebase/
+firebase.json
+.firebaserc
+
+# Ignore functions folder
+functions/
+
+# Ignore documentation
+*.md
+!README.md
+
+# Ignore deployment scripts
+update-and-deploy.bat
+update-and-deploy.sh
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore IDE
+.vscode/
+.idea/
+
+# Ignore logs
+*.log
+npm-debug.log*
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
