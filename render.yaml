@@ -1,49 +1,43 @@
-# Render Blueprint Configuration
-# This file enables one-click deployment to Render
-
 services:
+  # Backend Web Service
   - type: web
-    name: secureguard-connect
+    name: secureguard-backend
     env: node
     region: singapore
     plan: free
-    buildCommand: npm run install-all && npm run build
-    startCommand: npm start
+    buildCommand: npm install
+    startCommand: node server/index.js
     healthCheckPath: /api/health
-    autoDeploy: true
-    
     envVars:
       - key: NODE_ENV
         value: production
-      
       - key: PORT
-        value: 10000
-      
+        value: 5000
       - key: JWT_SECRET
-        value: your-super-secret-jwt-key-change-this-in-production-123456
-        
+        value: 0cce2ae379f93dd8bb0a35124b7df36ef4256a9d0cc2b74c4d848e0b03efc75665d1ed04a53ec134cb6175fd552af175177b31f77cd25c8337809df1d8878a44
       - key: JWT_REFRESH_SECRET
-        value: your-refresh-secret-key-change-this-in-production-789012
-      
+        value: 0dc504010783a3c8fb8b583c1de6635ae62f904c2b26c4600410c4cc9dad8664d01d8a137f91f8b29fbb09db05698cc72e4e0719bbf33f22cf94e8749fed2b29
       - key: CLIENT_URL
-        value: https://security-guard-management-ffxs.onrender.com
-        
-      # CRITICAL: Database path MUST match disk mountPath
-      # This ensures database persists across restarts
+        sync: false
       - key: DATABASE_URL
-        value: /opt/render/project/src/server/database/secureguard.db
-        
-      # CRITICAL: Uploads path MUST match disk mountPath
-      # This ensures uploaded files (photos, documents) persist
+        value: /opt/render/project/persistent/secureguard.db
       - key: UPLOADS_DIR
-        value: /opt/render/project/src/uploads
+        value: /opt/render/project/persistent/uploads
 
-    # CRITICAL: Persistent disk prevents data loss
-    # Without this disk, database and uploads are deleted on every restart!
-    # Free tier allows 1 GB persistent storage
-    # If disk is not created automatically, add it manually in Render Dashboard:
-    # Dashboard → Your Service → Disks → Add Disk
-    disk:
-      name: data
-      mountPath: /opt/render/project/src
-      sizeGB: 1
+  # Frontend Static Site
+  - type: web
+    name: secureguard-frontend
+    env: static
+    region: singapore
+    plan: free
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: ./client/build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
+      - key: REACT_APP_SOCKET_URL
+        sync: false
