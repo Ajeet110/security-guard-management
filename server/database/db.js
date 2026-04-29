@@ -26,6 +26,8 @@ const ensureDbDirExists = () => {
 const initDatabase = async () => {
   try {
     console.log('🔄 Initializing sql.js...');
+    console.log(`📂 Database path: ${dbPath}`);
+    console.log(`📂 Absolute path: ${path.resolve(dbPath)}`);
     
     // Ensure database directory exists
     if (!ensureDbDirExists()) {
@@ -547,10 +549,46 @@ const initDatabase = async () => {
 
 const saveDatabase = () => {
   if (db) {
-    const data = db.export();
-    fs.writeFileSync(dbPath, data);
+    try {
+      const data = db.export();
+      fs.writeFileSync(dbPath, data);
+      console.log(`💾 Database saved successfully to: ${dbPath} (${data.length} bytes)`);
+    } catch (error) {
+      console.error('❌ Failed to save database:', error.message);
+    }
   }
 };
+
+// Auto-save database every 30 seconds to prevent data loss
+setInterval(() => {
+  if (db) {
+    saveDatabase();
+  }
+}, 30000); // 30 seconds
+
+// Save database on process exit
+process.on('exit', () => {
+  console.log('🔄 Process exiting, saving database...');
+  saveDatabase();
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 SIGINT received, saving database...');
+  saveDatabase();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('🔄 SIGTERM received, saving database...');
+  saveDatabase();
+  process.exit(0);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  saveDatabase();
+  process.exit(1);
+});
 
 // Wrapper functions to match better-sqlite3 API
 const prepare = (sql) => {

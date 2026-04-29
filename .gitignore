@@ -10,7 +10,13 @@ client/node_modules/
 .env.production.local
 
 # Database files (keep structure, ignore data)
-server/database/secureguard.db
+# IMPORTANT: If you want to persist database across deployments, comment out the line below
+# For production, use Render Disk or external database instead
+# server/database/secureguard.db
+
+# Database backups (always ignore)
+server/database/*.backup.db
+server/database/backups/
 
 # Uploads directory (keep structure, ignore uploads)
 uploads/attendance/*
