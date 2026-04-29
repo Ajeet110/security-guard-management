@@ -600,7 +600,9 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
     { key: 'aadhaar', label: 'Aadhaar Card', icon: 'fa-id-card' },
     { key: 'pan', label: 'PAN Card', icon: 'fa-file-invoice' },
     { key: 'police_verification', label: 'Police Verification', icon: 'fa-shield-halved' },
-    { key: 'bank_passbook', label: 'Bank Passbook', icon: 'fa-building-columns' }
+    { key: 'bank_passbook', label: 'Bank Passbook', icon: 'fa-building-columns' },
+    { key: '10th_marksheet', label: '10th Marksheet', icon: 'fa-graduation-cap' },
+    { key: '12th_marksheet', label: '12th Marksheet', icon: 'fa-graduation-cap' }
   ];
 
   const getDocStatus = (docType) => {
@@ -692,10 +694,43 @@ const ProfileModal = ({ user, onClose, onOpenChat, onManageClick, onRefresh, vis
 
             <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '12px', gridColumn: '1 / -1' }}>
               <div style={{ fontSize: '10px', color: 'var(--t3)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Security
+                Password
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--t2)' }}>
-                Password is only shown once during user creation for security reasons
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{ 
+                  fontSize: '16px', 
+                  fontWeight: 600, 
+                  color: 'var(--grn)',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px'
+                }}>
+                  {visiblePasswords[user.id] ? 'Contact Admin' : '••••••'}
+                </div>
+                <button
+                  onClick={() => togglePasswordVisibility(user.id)}
+                  style={{
+                    background: 'var(--bg2)',
+                    border: '1px solid var(--bd)',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    color: 'var(--t2)',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <i className={`fa-solid fa-eye${visiblePasswords[user.id] ? '-slash' : ''}`}></i>
+                  {visiblePasswords[user.id] ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '6px' }}>
+                Password shown only during user creation
               </div>
             </div>
           </div>
