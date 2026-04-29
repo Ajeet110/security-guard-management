@@ -67,12 +67,10 @@ router.post('/mark', authenticateToken, upload.single('photo'), (req, res) => {
       }
       
       if (existingAttendance.is_rejected) {
-        // Don't delete - just inform user they need Owner permission to delete
-        return res.status(400).json({ 
-          error: 'Attendance was rejected',
-          message: 'Your previous attendance was rejected. Please contact Owner to delete it before marking new attendance.',
-          rejection_reason: existingAttendance.rejection_reason
-        });
+        // Automatically delete rejected attendance and allow new marking
+        console.log(`Auto-deleting rejected attendance ID: ${existingAttendance.id} for user ${req.user.id}`);
+        db.prepare('DELETE FROM attendance WHERE id = ?').run(existingAttendance.id);
+        // Continue to mark new attendance below (don't return here)
       } else {
         // If pending (not verified and not rejected)
         return res.status(400).json({ 
